@@ -31,8 +31,20 @@ foreach ($VMhost in (Get-VMHost)) {
 }
 write-host ""
 write-host "------------ V-256377 ------------"
-Write-host "Validate these are authorized lockdown users"
-Get-VMHost | sort-object name | %{ write-host `n$_; $vmhost = $_  | Get-View; $lockdown = Get-View $vmhost.ConfigManager.HostAccessManager; $lockdown.QueryLockdownExceptions() }
+foreach ($vmhostes in (Get-VMHost)) {
+    $vcenter_check3 = ((Get-VMHost |Select Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).Name
+    $other_vcenter_check3 = ((Get-VMHost |Select Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).vCenter
+    if ($vcenter_check3 -eq $other_vcenter_check3) {
+        Write-Host "Not Applicable" -ForegroundColor Gray
+        Write-Host "No Vcenter being used"
+    } else { 
+        Write-host "Validate these are authorized lockdown users"
+    $lockdown = Get-VMHost | Get-View
+    $lockdown2 = Get-View $lockdown.ConfigManager.HostAccessManager
+    $lockdown_output = $lockdown2.QueryLockdownExceptions()
+    echo $lockdown_output
+    }
+}
 write-host ""
 write-host "------------ V-256378 ------------"
 foreach ($VMhost in (Get-VMHost)) {
@@ -322,7 +334,7 @@ write-host "------------ V-256412 ------------";
 foreach ($VMhost in (Get-VMHost)) {
     $vcenter_check2 = ((Get-VMHost |Select Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).Name
     $other_vcenter_check2 = ((Get-VMHost |Select Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).vCenter
-    if ($vcenter_check2 -eq $other_vcenter_check) {
+    if ($vcenter_check2 -eq $other_vcenter_check2) {
         Write-Host "Not Applicable" -ForegroundColor Gray
         Write-Host "No Vcenter being used"
     } 
@@ -340,11 +352,12 @@ foreach ($VMhost in (Get-VMHost)) {
     }
 write-host ""
 write-host "------------ V-256413 ------------";
-Write-host "If IP-Based storage is in use this is Not Applicable"
+Write-host "If IP-Based storage is NOT in use this is Not Applicable"
 write-host "For each IP-Based storage VMkernel, make sure there are no services running except for the vSAN service"
 Write-host "Also make sure all IP-Based storage are isolated from other Vlans"
+write-host ""
 foreach ($VMhost in (Get-VMHost)) {
-    (Get-VirtualPortGroup -VMHost $vmhost -Standard)
+    (Get-VirtualPortGroup -VMHost $vmhost -Standard | select Name,VLanID)
     (Get-VMHostNetworkAdapter -VMKernel -ErrorAction Stop | Select Name,PortGroupName,VsanTrafficEnabled,ProvisioningEnabled,VSphereReplicationEnabled,VSphereReplicationNFCEnabled,VSphereBackupNFCEnabled,ManagementTrafficEnabled,FaultToleranceLoggingEnabled,VMotionEnabled)
 }
 write-host ""

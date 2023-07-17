@@ -676,3 +676,37 @@ foreach ($VMhost in (Get-VMHost)) {
     }
 }
 write-host ""
+write-host "------------ V-256424 ------------"
+foreach ($vmhosts in (Get-VMHost)) {
+    $vswitch_ft4 = (Get-VMHost | Get-VirtualSwitch -Standard | Get-SecurityPolicy)
+    if ($vswitch_ft4 -eq $null) {
+        Write-Host "Not Applicable" -ForegroundColor Gray
+        Write-Host "No Standard VSwitches are in Use"
+    } else {
+        $vportgroup_2 = (@(Get-VirtualPortGroup -Standard | Select-Object Name,VLanId).VLanID)
+        if (("1" -in $vportgroup_2) -or ("0" -in $vportgroup_2)) {
+            Write-Host "Open" -ForegroundColor Red
+            Write-Output $vportgroup_2
+        }
+        else {
+            Write-Host "Not a Finding" -ForegroundColor Green
+        }        }
+}
+write-host ""
+write-host "------------ V-256425 ------------"
+foreach ($vmhosts in (Get-VMHost)) {
+    $vswitch_ft5 = (Get-VMHost | Get-VirtualSwitch -Standard | Get-SecurityPolicy)
+    if ($vswitch_ft5 -eq $null) {
+        Write-Host "Not Applicable" -ForegroundColor Gray
+        Write-Host "No Standard VSwitches are in Use"
+    } else {
+        $vportgroup_3 = (@(Get-VirtualPortGroup -Standard | Select-Object Name,VLanId).VLanID)
+        if ("4095" -in $vportgroup_3) {
+            Write-Host "Open" -ForegroundColor Red
+            Write-Output $vportgroup_3
+        }
+        else {
+            Write-Host "Not a Finding" -ForegroundColor Green
+        }        }
+}
+write-host ""

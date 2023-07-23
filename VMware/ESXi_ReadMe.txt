@@ -15,6 +15,7 @@
 #3. They need to have PuTTY installed for some of the checks to work.
 #Download link for PuTTY
     https://putty.org/
+    Have them login to PuTTY and connect to the ESXi server, just to prove it
 
 #4. They will need to enable SSH on the target ESXi host
 

@@ -1,4 +1,4 @@
-#There are 4 Requirements for the ESXi script
+#There are 5 Requirements for the ESXi script
 #1. They must have powercli installed on the system 
 # Instructions on installing PowerCLI with an internet connection:      
     From a computer with an internet connection open powershell (preferrably as an administrator)
@@ -16,6 +16,8 @@
 #Download link for PuTTY
     https://putty.org/
 
-#4. They will need to connect to the ESXi host specifically and have administrator credentials
+#4. They will need to enable SSH on the target ESXi host
+
+#5. They will need to connect to the ESXi host specifically and have administrator credentials
 # Instructions on connecting to the ESXi host
     Connect-VIServer {hostname/IPaddr}

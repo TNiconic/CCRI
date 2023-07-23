@@ -1,3 +1,8 @@
+#****************************************************************
+#*************Written By Mitchell Gibson USACPB CRIA*************
+#*************Last Updated Jul 23, 2023 v1.0*********************
+#****************************************************************
+
 #At the top for output options, won't appear in script
 write-host "------------ V-256413 ------------";
 Write-host "If IP-Based storage is in use this is Not Applicable"
@@ -9,12 +14,16 @@ foreach ($VMhost in (Get-VMHost)) {
 }
 Clear-Host
 
+
+#Start of Script
+
 #Get Host Information for individual ESXi host
 Write-Host "Host Name = "(get-vmhost | Select-Object Name).Name
 Write-Host "IP Address = "(get-vmhost | Get-VMHostNetworkAdapter | Where-Object {$_.Name -eq "vmk0"} | Select-Object IP).IP
 Write-Host "MAC Address = "(get-vmhost | Get-VMHostNetworkAdapter | Where-Object {$_.Name -eq "vmk0"} | Select-Object Mac).Mac
 Write-Host "FQDN = "(Get-VMHost | Select-Object @{N="FQDN";E={$_.NetworkInfo.HostName + "." + $_.NetworkInfo.DomainName}}).FQDN
 Write-Host "Target Data = Member Server"
+Write-Host "Technology Area = Other Review"
 write-host ""
 
 #Get Credentials to enable ssh into ESXi shell utilizing PuTTY's Plink protocol
@@ -25,6 +34,7 @@ $result = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($Ptr)
 [System.Runtime.InteropServices.Marshal]::ZeroFreeCoTaskMemUnicode($Ptr)
 
 #Start of the Checks
+
 write-host "------------ V-2256375 ------------"
 foreach ($VMhost in (Get-VMHost)) {
     $lockdown = (Get-VMHost | Select-Object Name,@{N="Lockdown";E={$_.Extensiondata.Config.LockdownMode}}).Lockdown
@@ -85,8 +95,8 @@ foreach ($VMhost in (Get-VMHost)) {
         Write-Output $three_invalid
     }
 }
-  write-host ""
-  write-host "------------ V-256380 ------------"
+write-host ""
+write-host "------------ V-256380 ------------"
   foreach ($VMhost in (Get-VMHost)) {
     $fifteen_min = (Get-VMHost | sort-object name| Get-AdvancedSetting -Name Security.AccountUnlockTime).value
     if ($fifteen_min -eq 900) {
@@ -107,8 +117,8 @@ foreach ($VMhost in (Get-VMHost)) {
         Write-Output $banner
     }
 }
- write-host ""
- write-host "------------ V-256382 ------------"
+write-host ""
+write-host "------------ V-256382 ------------"
  foreach ($VMhost in (Get-VMHost)) {
     $ssh_banner = (Get-VMHost | sort-object name | Get-AdvancedSetting -Name Config.Etc.issue).value
     if ($ssh_banner -like "*You are accessing a U.S. Government*") {
@@ -117,8 +127,8 @@ foreach ($VMhost in (Get-VMHost)) {
         Write-Host "Open" -ForegroundColor Red
     }
 }
-  write-host ""
-  write-host "------------ V-256383 ------------"
+write-host ""
+write-host "------------ V-256383 ------------"
 foreach ($VMHosts in (Get-VMHost)) {
     $plink_banner = (plink "$VMHosts" -l root -pw "$result" -batch "/usr/lib/vmware/openssh/bin/sshd -T | grep banner")
     if ($plink_banner -eq "banner /etc/issue") {
@@ -129,7 +139,7 @@ foreach ($VMHosts in (Get-VMHost)) {
     }
 }
 write-host ""
-  write-host "------------ V-256384 ------------"
+write-host "------------ V-256384 ------------"
   foreach ($VMhost in (Get-VMHost)) {
     $esxcli = Get-EsxCli -v2
     $fips = ($esxcli.system.security.fips140.ssh.get.invoke()).Enabled
@@ -140,8 +150,8 @@ write-host ""
         Write-Output $fips
     }
 }
-   write-host ""
-   write-host "------------ V-256385 ------------"
+write-host ""
+write-host "------------ V-256385 ------------"
 foreach ($VMHosts in (Get-VMHost)) {
     $plink_rhost = (plink "$VMHosts" -l root -pw "$result" -batch "/usr/lib/vmware/openssh/bin/sshd -T | grep ignorerhosts")
     if ($plink_rhost -eq "ignorerhosts yes") {
@@ -262,7 +272,7 @@ foreach ($VMHosts in (Get-VMHost)) {
     }
 }
 write-host ""
-   write-host "------------ V-256396 ------------"
+write-host "------------ V-256396 ------------"
  foreach ($VMhost in (Get-VMHost)) {
     $info = (Get-VMHost | sort-object name | Get-AdvancedSetting -Name Config.HostAgent.log.level).value
     if ($info -eq "info") {
@@ -272,8 +282,8 @@ write-host ""
         Write-Output $info
     }
 }
-  write-host ""
-  write-host "------------ V-256397 ------------"
+write-host ""
+write-host "------------ V-256397 ------------"
   foreach ($VMhost in (Get-VMHost)) {
      $complex_p = (Get-VMHost | Get-AdvancedSetting -Name Security.PasswordQualityControl).value
      if ($complex_p -eq "similar=deny retry=3 min=disabled,disabled,disabled,disabled,15") {
@@ -566,7 +576,7 @@ foreach ($VMhost in (Get-VMHost)) {
     $firewall_2 = (@(Get-VMHost | Get-VMHostFirewallException | Where-Object {$_.Enabled -eq $true}).ExtensionData.AllowedHosts.AllIP)
     if ("True" -in $firewall_2) {
         Write-Host "Open" -ForegroundColor Red
-        echo ($firewall_allip | Format-Table -AutoSize)
+        Write-Output ($firewall_allip | Format-Table -AutoSize)
     } else {
         Write-Host "Not a Finding" -ForegroundColor Green
     }
@@ -608,11 +618,11 @@ foreach ($VMhost in (Get-VMHost)) {
         $vportgroup_ft_array = (@(Get-VMHost | Get-VirtualPortGroup -Standard | Get-SecurityPolicy).ForgedTransmits)       
         if ("True" -in $vswitch_ft_array){
             Write-Host "Open" -ForegroundColor Red
-            echo (Get-VMHost | Get-VirtualSwitch -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
+            Write-Output (Get-VMHost | Get-VirtualSwitch -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
         }
         if ("True" -in $vportgroup_ft_array) {
             Write-Host "Open" -ForegroundColor Red
-            echo (Get-VMHost | Get-VirtualPortGroup -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
+            Write-Output (Get-VMHost | Get-VirtualPortGroup -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
         } 
         else {
             Write-Host "Not a Finding" -ForegroundColor Green
@@ -631,11 +641,11 @@ foreach ($vmhosts in (Get-VMHost)) {
         $vportgroup_ft_array2 = (@(Get-VMHost | Get-VirtualPortGroup -Standard | Get-SecurityPolicy).MacChanges)       
         if ("True" -in $vswitch_ft_array2){
             Write-Host "Open" -ForegroundColor Red
-            echo (Get-VMHost | Get-VirtualSwitch -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
+            Write-Output (Get-VMHost | Get-VirtualSwitch -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
         }
         if ("True" -in $vportgroup_ft_array2) {
             Write-Host "Open" -ForegroundColor Red
-            echo (Get-VMHost | Get-VirtualPortGroup -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
+            Write-Output (Get-VMHost | Get-VirtualPortGroup -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
         } else {
             Write-Host "Not a Finding" -ForegroundColor Green
         }
@@ -653,11 +663,11 @@ foreach ($vmhosts in (Get-VMHost)) {
         $vportgroup_ft_array3 = (@(Get-VMHost | Get-VirtualPortGroup -Standard | Get-SecurityPolicy).AllowPromiscuous)       
         if ("True" -in $vswitch_ft_array3){
             Write-Host "Open" -ForegroundColor Red
-            echo (Get-VMHost | Get-VirtualSwitch -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
+            Write-Output (Get-VMHost | Get-VirtualSwitch -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
         }
         if ("True" -in $vportgroup_ft_array3) {
             Write-Host "Open" -ForegroundColor Red
-            echo (Get-VMHost | Get-VirtualPortGroup -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
+            Write-Output (Get-VMHost | Get-VirtualPortGroup -Standard | Get-SecurityPolicy | Format-Table -AutoSize)
         } else {
             Write-Host "Not a Finding" -ForegroundColor Green
         }
@@ -684,7 +694,7 @@ foreach ($vmhosts in (Get-VMHost)) {
         Write-Host "No Standard VSwitches are in Use"
     } else {
         $vportgroup_2 = (@(Get-VirtualPortGroup -Standard | Select-Object Name,VLanId).VLanID)
-        if (("1" -in $vportgroup_2) -or ("0" -in $vportgroup_2)) {
+        if ("1" -in $vportgroup_2) {
             Write-Host "Open" -ForegroundColor Red
             Write-Output $vportgroup_2
         }
@@ -708,5 +718,325 @@ foreach ($vmhosts in (Get-VMHost)) {
         else {
             Write-Host "Not a Finding" -ForegroundColor Green
         }        }
+}
+write-host ""
+write-host "------------ V-256426 ------------"
+foreach ($vmhosts in (Get-VMHost)) {
+    $vswitch_ft6 = (Get-VMHost | Get-VirtualSwitch -Standard | Get-SecurityPolicy)
+    if ($vswitch_ft6 -eq $null) {
+        Write-Host "Not Applicable" -ForegroundColor Gray
+        Write-Host "No Standard VSwitches are in Use"
+    } else {
+        $vportgroup_4 = (@(Get-VirtualPortGroup -Standard | Select-Object Name,VLanId).VLanID)
+        $cisco_vlans = 1001..1024
+        $nexus_vlans = 3968..4094
+        $matchFound = $false
+        foreach ($item in $vportgroup_4) {
+            if ($cisco_vlans -contains $item) {
+                $matchFound = $true
+                break }
+            if ($nexus_vlans -contains $item) {
+                $matchFound = $true
+                break }
+        }
+        if ($matchFound) {
+            Write-Host "Open" -ForegroundColor Red
+            Write-Output $vportgroup_4
+        } else {
+            Write-Host "Not a Finding" -ForegroundColor Green
+        }
+    }    
+}
+write-host ""
+write-host "------------ V-256427 ------------"
+foreach ($vmhosts in (Get-VMHost)) {
+    $cim_service = (@(Get-VMHost | Get-Vmhostservice | Select-Object key).key)
+    if ($cim_service -notlike "*CIM*") {
+        Write-Host "Not Applicable" -ForegroundColor Gray
+        Write-Host "No CIM service detected"
+    } else {
+        $cim_users = (@(Get-VMHostAccount | Select-Object Name).name)
+        foreach ($cim_account in $cim_users) {
+            if ($cim_account -like "*CIM*") {
+                 $cim_result = $cim_account
+                 $cim_role = ((Get-VIPermission -Principal $cim_result).Role)
+                 if ($cim_role -eq "ReadOnly") {
+                    Write-Host "Not a Finding" -ForegroundColor Green
+                 }
+                 else {
+                    Write-Host "Open" -ForegroundColor Red
+                    Write-Host "Check the following user(s) for their permissions"
+                    Write-Host "User= $cim_account Role= $cim_role"
+                 }
+                break }
+        }
+    }
+}
+write-host ""
+write-host "------------ V-256428 ------------"
+foreach ($VMHosts in (Get-VMHost)) {
+    $plink_version = (plink "$VMHosts" -l root -pw "$result" -batch "vmware -v")
+    Write-Host $plink_version
+    Write-Host "https://kb.vmware.com/s/article/2143832"   
+}
+write-host ""
+write-host "------------ V-256429 ------------"
+foreach ($VMhost in (Get-VMHost)) {
+    $tls_checks = ((Get-VMHost | Get-AdvancedSetting -Name UserVars.ESXiVPsDisabledProtocols).value)
+    if (($tls_checks -eq ("tlsv1,tlsv1.1,sslv3")) -or ($tls_checks -eq ("tlsv1,sslv3,tlsv1.1")) -or ($tls_checks -eq ("tlsv1.1,tlsv1,sslv3")) -or ($tls_checks -eq ("tlsv1.1,sslv3,tlsv1")) -or ($tls_checks -eq ("sslv3,tlsv1.1,tlsv1")) -or ($tls_checks -eq ("sslv3,tlsv1,tlsv1.1"))) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $tls_checks
+    }
+}
+write-host ""
+write-host "------------ V-256430 ------------"
+foreach ($VMHosts in (Get-VMHost)) {
+    $secure_boot = (plink "$VMHosts" -l root -pw "$result" -batch "/usr/lib/vmware/secureboot/bin/secureBoot.py -s")
+    if ($secure_boot -eq "Enabled") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }   
+    else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $secure_boot
+    }
+}
+write-host ""
+write-host "------------ V-256431 ------------"
+foreach ($VMHosts in (Get-VMHost)) {
+    Get-VMHost  -PipelineVariable esx |
+    ForEach-Object -Process {
+      $certMgr = Get-View -Id $esx.ExtensionData.ConfigManager.CertificateManager
+    } 
+    $CertIssuer = $certMgr.CertificateInfo.Issuer
+    $CertExpiration = $certMgr.CertificateInfo.NotAfter
+    if ($CertExpiration -lt (get-date)) {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Host "Certificate has Expired"
+        Write-Output $CertExpiration
+    }   
+    if ($CertIssuer -notlike "*Government*") {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Host "Not a valid certificate"
+        Write-Output $CertIssuer
+    }
+    else {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }
+}
+write-host ""
+write-host "------------ V-256432 ------------"
+foreach ($VMhost in (Get-VMHost)) {
+    $shell_warning = ((Get-VMHost | Get-AdvancedSetting -Name UserVars.SuppressShellWarning).value)
+    if ($shell_warning -eq "0") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $shell_warning
+    }
+}
+write-host ""
+write-host "------------ V-256433 ------------"
+foreach ($VMhost in (Get-VMHost)) {
+    $hyperthread_warning = ((Get-VMHost | Get-AdvancedSetting -Name UserVars.SuppressHyperthreadWarning).value)
+    if ($hyperthread_warning -eq "0") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $hyperthread_warning
+    }
+}
+write-host ""
+write-host "------------ V-256434 ------------"
+foreach ($VMHosts in (Get-VMHost)) {
+    $tcp_forward = (plink "$VMHosts" -l root -pw "$result" -batch "/usr/lib/vmware/openssh/bin/sshd -T|grep allowtcpforwarding")
+    if ($tcp_forward -eq "allowtcpforwarding no") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }   
+    else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $tcp_forward
+    }
+}
+write-host ""
+write-host "------------ V-256435 ------------"
+foreach ($VMhost in (Get-VMHost)) {
+    $slpd = (Get-VMHost | Get-VMHostService | Where-Object {$_.Label -eq "slpd"})
+    $slpd_policy = ((Get-VMHost | Get-VMHostService | Where-Object {$_.Label -eq "slpd"}).Policy)
+    $slpd_running = ((Get-VMHost | Get-VMHostService | Where-Object {$_.Label -eq "slpd"}).Running)
+    if (($slpd_policy -match "on") -or ($slpd_running -match "True")) {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $slpd
+    } else {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }
+}
+write-host ""
+write-host "------------ V-256386 ------------"
+  foreach ($VMhost in (Get-VMHost)) {
+    $esxcli3 = Get-EsxCli -v2
+    $audit_logging1 = (($esxcli3.system.auditrecords.get.invoke() | Select-Object AuditRecordStorageActive).AuditRecordStorageActive)
+    if ($audit_logging1 -eq "True") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Host "Audit Storage is not enabled"
+        Write-Output $audit_logging1
+    }
+}
+write-host ""
+write-host "------------ V-256387 ------------"
+   foreach ($VMhost in (Get-VMHost)) {
+     $esxcli4 = Get-EsxCli -v2
+     $x509 = (($esxcli4.system.syslog.config.get.invoke() | Select-Object StrictX509Compliance).StrictX509Compliance)
+     if ($x509 -eq "True") {
+         Write-Host "Not a Finding" -ForegroundColor Green
+     } else {
+         Write-Host "Open" -ForegroundColor Red
+         Write-Host "X509 is not enabled"
+         Write-Output $x509
+     }
+ }
+write-host ""
+write-host "------------ V-256438 ------------";
+    foreach ($VMhost in (Get-VMHost)) {
+        $ssl_syslog = (Get-VMHost | Get-AdvancedSetting -Name Syslog.global.logCheckSSLCerts).value
+        if ($ssl_syslog -eq "true") {
+            Write-Host "Not a Finding" -ForegroundColor Green
+        } else {
+            Write-Host "Open" -ForegroundColor Red
+            Write-Output $ssl_syslog
+        }
+    }
+write-host ""
+write-host "------------ V-256439 ------------";
+    foreach ($VMhost in (Get-VMHost)) {
+        $mem_mem = (Get-VMHost | Get-AdvancedSetting -Name Mem.MemEagerZero).value
+        if ($mem_mem -eq "1") {
+            Write-Host "Not a Finding" -ForegroundColor Green
+        } else {
+            Write-Host "Open" -ForegroundColor Red
+            Write-Output $mem_mem
+        }
+    }
+write-host ""
+write-host "------------ V-256440 ------------";
+   foreach ($VMhost in (Get-VMHost)) {
+       $vsphere_api = (Get-VMHost | Get-AdvancedSetting -Name Config.HostAgent.vmacore.soap.sessionTimeout).value
+       if ($vsphere_api -eq "30") {
+           Write-Host "Not a Finding" -ForegroundColor Green
+       } else {
+           Write-Host "Open" -ForegroundColor Red
+           Write-Output $vsphere_api
+       }
+   }
+write-host ""
+write-host "------------ V-256441 ------------";
+   foreach ($VMhost in (Get-VMHost)) {
+       $session_time = (Get-VMHost | Get-AdvancedSetting -Name UserVars.HostClientSessionTimeout).value
+       if ($session_time -eq "600") {
+           Write-Host "Not a Finding" -ForegroundColor Green
+       } else {
+           Write-Host "Open" -ForegroundColor Red
+           Write-Output $session_time
+       }
+   }
+write-host ""
+write-host "------------ V-256442 ------------"
+  foreach ($VMhost in (Get-VMHost)) {
+    $esxcli5 = Get-EsxCli -v2
+    $rhttp_proxy = (($esxcli5.system.security.fips140.rhttpproxy.get.invoke().Enabled))
+    if ($rhttp_proxy -eq "true") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $rhttp_proxy
+    }
+}
+write-host ""
+write-host "------------ V-256443 ------------";
+   foreach ($VMhost in (Get-VMHost)) {
+       $max_pass = (Get-VMHost | Get-AdvancedSetting -Name Security.PasswordMaxDays).value
+       if ($max_pass -eq "90") {
+           Write-Host "Not a Finding" -ForegroundColor Green
+       } else {
+           Write-Host "Open" -ForegroundColor Red
+           Write-Output $max_pass
+       }
+   }
+write-host ""
+write-host "------------ V-256444 ------------"
+foreach ($VMHosts in (Get-VMHost)) {
+    $ovveride_vm = (plink "$VMHosts" -l root -pw "$result" -batch "stat -c "%s" /etc/vmware/settings")
+    if ($ovveride_vm -eq "0") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }   
+    else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $ovveride_vm
+    }
+}
+write-host ""
+write-host "------------ V-256445 ------------"
+foreach ($VMHosts in (Get-VMHost)) {
+    $ovveride_vm_logger = (plink "$VMHosts" -l root -pw "$result" -batch "grep "^vmx\.log" /etc/vmware/config")
+    if ($ovveride_vm_logger -eq $null) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }   
+    else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $ovveride_vm_logger
+    }
+}
+write-host ""
+write-host "------------ V-256446 ------------"
+  foreach ($VMhost in (Get-VMHost)) {
+    $esxcli6 = Get-EsxCli -v2
+    $tpm1 = (($esxcli6.system.settings.encryption.get.invoke().Mode))
+    if ($tpm1 -eq "TPM") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Host "Validate wehter they have a compatible TPM, if not this will be downgraded to a CAT 3"
+        Write-Output $tpm1
+    }
+}
+write-host ""
+write-host "------------ V-256447 ------------"
+  foreach ($VMhost in (Get-VMHost)) {
+    $esxcli6 = Get-EsxCli -v2
+    $tpm2 = (($esxcli6.system.settings.encryption.get.invoke().RequireSecureBoot))
+    if ($tpm2 -eq "True") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Host "Validate wehter they have a compatible TPM, if not this will be downgraded to a CAT 3"
+        Write-Output $tpm2
+    }
+}
+write-host ""
+write-host "------------ V-256448 ------------"
+  foreach ($VMhost in (Get-VMHost)) {
+    $disable_cim_policy = ((Get-VMHost | Get-VMHostService | Where-Object {$_.Label -eq "CIM Server"}).Policy)
+    $disable_cim_running = ((Get-VMHost | Get-VMHostService | Where-Object {$_.Label -eq "CIM Server"}).Running)
+    if (($disable_cim_policy -eq "on") -or ($disable_cim_running -eq "True")) {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Host ((Get-VMHost | Get-VMHostService | Where-Object {$_.Label -eq "CIM Server"}))
+    } else {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }
+}
+write-host ""
+write-host "------------ V-256449 ------------"
+foreach ($VMHosts in (Get-VMHost)) {
+    $fips_140_2 = (plink "$VMHosts" -l root -pw "$result" -batch "/usr/lib/vmware/openssh/bin/sshd -T|grep ciphers")
+    if (($fips_140_2 -eq "ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr") -or ($fips_140_2 -eq "ciphers aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr")) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }   
+    else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $fips_140_2
+    }
 }
 write-host ""

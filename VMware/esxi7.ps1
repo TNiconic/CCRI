@@ -60,16 +60,17 @@ write-host ""
 write-host "------------ V-256377 ------------"
 foreach ($vmhostes in (Get-VMHost)) {
     $vcenter_check3 = ((Get-VMHost |Select-Object Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).Name
-    $other_vcenter_check3 = ((Get-VMHost |Select-Object Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).vCenter
-    if ($vcenter_check3 -eq $other_vcenter_check3) {
+    $esxiHost1 = Get-VMHost
+    $vcenterIpAddress = $esxiHost1.ExtensionData.Summary.ManagementServerIp
+        if ($vcenter_check3 -eq $vcenterIpAddress) {
         Write-Host "Not Applicable" -ForegroundColor Gray
         Write-Host "No Vcenter being used"
     } else { 
-        Write-host "Validate these are authorized lockdown users"
-    $lockdown = Get-VMHost | Get-View
-    $lockdown2 = Get-View $lockdown.ConfigManager.HostAccessManager
-    $lockdown_output = $lockdown2.QueryLockdownExceptions()
-    Write-Output $lockdown_output
+        Write-host "Validate these are authorized lockdown users (if none; Not a Finding)"
+        $lockdown = Get-VMHost | Get-View
+        $lockdown2 = Get-View $lockdown.ConfigManager.HostAccessManager
+        $lockdown_output = $lockdown2.QueryLockdownExceptions()
+        Write-Output $lockdown_output
     }
 }
 write-host ""
@@ -153,7 +154,7 @@ write-host "------------ V-256384 ------------"
 write-host ""
 write-host "------------ V-256385 ------------"
 foreach ($VMHosts in (Get-VMHost)) {
-    $plink_rhost = (plink "$VMHosts" -l root -pw "$result" -batch "/usr/lib/vmware/openssh/bin/sshd -T | grep ignorerhosts")
+    $plink_rhost = (echo yes | plink "$VMHosts" -l root -pw "$result" -batch "/usr/lib/vmware/openssh/bin/sshd -T | grep ignorerhosts")
     if ($plink_rhost -eq "ignorerhosts yes") {
         Write-Host "Not a Finding" -ForegroundColor Green
     } else {
@@ -362,6 +363,7 @@ foreach ($VMhost in (Get-VMHost)) {
     $AD_authentication2 = (Get-VMHost | Get-VMHostAuthentication).Domain;
     if ($AD_authentication2 -eq $null) {
         Write-Host "Not Applicable" -ForegroundColor Gray
+        Write-Host "AD Host Profiles not detected"
     }
     $join_host_Enabled = ((Get-VMHost | sort-object name | Select-Object Name, ` @{N="HostProfile";E={$_ | Get-VMHostProfile}}, ` @{N="JoinADEnabled";E={($_ | Get-VmHostProfile).ExtensionData.Config.ApplyProfile.Authentication.ActiveDirectory.Enabled}}, ` @{N="JoinDomainMethod";E={(($_ | Get-VMHostProfile).ExtensionData.Config.ApplyProfile.Authentication.ActiveDirectory | Select-Object -ExpandProperty Policy | Where-Object {$_.Id -eq "JoinDomainMethodPolicy"}).Policyoption.Id}})).JoinADEnabled
     $join_domain_method = ((Get-VMHost | sort-object name | Select-Object Name, ` @{N="HostProfile";E={$_ | Get-VMHostProfile}}, ` @{N="JoinADEnabled";E={($_ | Get-VmHostProfile).ExtensionData.Config.ApplyProfile.Authentication.ActiveDirectory.Enabled}}, ` @{N="JoinDomainMethod";E={(($_ | Get-VMHostProfile).ExtensionData.Config.ApplyProfile.Authentication.ActiveDirectory | Select-Object -ExpandProperty Policy | Where-Object {$_.Id -eq "JoinDomainMethodPolicy"}).Policyoption.Id}})).JoinDomainMethod
@@ -377,6 +379,7 @@ foreach ($VMhost in (Get-VMHost)) {
     $AD_authentication3 = (Get-VMHost | Get-VMHostAuthentication).Domain;
     if ($AD_authentication3 -eq $null) {
         Write-Host "Not Applicable" -ForegroundColor Gray
+        Write-Host "AD not detected"
     }
     else {
         $esx_admins = ((Get-VMHost | sort-object name | Get-AdvancedSetting -Name Config.HostAgent.plugins.hostsvc.esxAdminsGroup | Select-Object @{N='VMHost';E={$_.Entity.Name}},Name,Value)).Value
@@ -471,29 +474,37 @@ write-host ""
 write-host "------------ V-256411 ------------";
 foreach ($VMhost in (Get-VMHost)) {
     $vcenter_check = ((Get-VMHost |Select-Object Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).Name
-    $other_vcenter_check = ((Get-VMHost |Select-Object Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).vCenter
-    if ($vcenter_check -eq $other_vcenter_check) {
+    $esxiHost2 = Get-VMHost
+    $vcenterIpAddress2 = $esxiHost2.ExtensionData.Summary.ManagementServerIp
+    if ($vcenter_check -eq $vcenterIpAddress2) {
         Write-Host "Not Applicable" -ForegroundColor Gray
         Write-Host "No Vcenter being used"
     } 
     else {
-            $vmks = Get-VMHostNetworkAdapter -VMKernel -ErrorAction Stop
-            ForEach($vmk in $vmks){
-                If(($vmk.VMotionEnabled -eq "True" -and $vmk.FaultToleranceLoggingEnabled -eq "True") -xor ($vmk.VMotionEnabled -eq "True" -and $vmk.ManagementTrafficEnabled -eq "True") -xor ($vmk.VMotionEnabled -eq "True" -and $vmk.VsanTrafficEnabled -eq "True")){
-                    $Response = "VMKernel $($vmk.name) appears to have vMotion and another function enabled on the same VMKernel on $($vmhost.name)"
-                }else{$Response =  "Not a Finding"}
+        $vmks = Get-VMHostNetworkAdapter -VMKernel -ErrorAction Stop
+        ForEach($vmk in $vmks){
+            If(($vmk.VMotionEnabled -eq "True" -and $vmk.FaultToleranceLoggingEnabled -eq "True") -xor ($vmk.VMotionEnabled -eq "True" -and $vmk.ManagementTrafficEnabled -eq "True") -xor ($vmk.VMotionEnabled -eq "True" -and $vmk.VsanTrafficEnabled -eq "True")){
+                Write-Host "Open" -ForegroundColor Red
+                Write-Host "The VMotion VMK has another service enabled"
+                Write-Output $vmks
+                        }
+        ForEach($vmitest in $vmks){
+            If ($vmitest.VMotionEnabled -eq "True"){
+                $vmitest = ((Get-VirtualPortGroup -Name $vmitest.PortGroupName).VLanId)
+                echo "Vmotion VLanID: $vmitest"
             }
-            write-host $Response
-            (Get-VirtualPortGroup -VMHost $_ -Standard | Where-Object {(($_.Name).contains("vMotion")) -or (($_.Name).contains("VSAN")) -or (($_.Name).contains("Management")) -or (($_.Name).contains("mgmt"))} | Select-Object Name, VLanID)
-            write-host ""
         }
+        write-host "Check all Virtual Port Groups and Make sure they are on a different VLan than the VMotion VLan"
+        (Get-VirtualPortGroup | Select-Object Name, VLanID)    }
     }
+}
 write-host ""
 write-host "------------ V-256412 ------------";
 foreach ($VMhost in (Get-VMHost)) {
     $vcenter_check2 = ((Get-VMHost |Select-Object Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).Name
-    $other_vcenter_check2 = ((Get-VMHost |Select-Object Name,@{N='vCenter';E={([uri]$_.ExtensionData.Client.ServiceUrl).host}})).vCenter
-    if ($vcenter_check2 -eq $other_vcenter_check2) {
+    $esxiHost3 = Get-VMHost
+    $vcenterIpAddress3 = $esxiHost3.ExtensionData.Summary.ManagementServerIp
+    if ($vcenter_check2 -eq $vcenterIpAddress3) {
         Write-Host "Not Applicable" -ForegroundColor Gray
         Write-Host "No Vcenter being used"
     } 
@@ -501,14 +512,21 @@ foreach ($VMhost in (Get-VMHost)) {
             $vmks2 = Get-VMHostNetworkAdapter -VMKernel -ErrorAction Stop
             ForEach($vmkk in $vmks2){
                 If(($vmkk.ManagementTrafficEnabled -eq "True" -and $vmkk.FaultToleranceLoggingEnabled -eq "True") -xor ($vmkk.VMotionEnabled -eq "True" -and $vmkk.ManagementTrafficEnabled -eq "True") -xor ($vmkk.ManagementTrafficEnabled -eq "True" -and $vmkk.VsanTrafficEnabled -eq "True")){
-                    $Response = "VMKernel $($vmkk.name) appears to have vMotion and another function enabled on the same VMKernel on $($vmhost.name)"
-                }else{$Response =  "Not a Finding"}
+                    Write-Host "Open" -ForegroundColor Red
+                    Write-Host "The Management VMK has another service enabled"
+                    Write-Output $vmks
+                            }
+            ForEach($vmmtest in $vmks2){
+                If ($vmmtest.ManagementTrafficEnabled -eq "True"){
+                    $vmmtest = ((Get-VirtualPortGroup -Name $vmmtest.PortGroupName).VLanId)
+                    echo "Management VLanID:$vmmtest"
+                    }
             }
-            write-host $Response
-            (Get-VirtualPortGroup -VMHost $vmhost -Standard | Where-Object {(($_.Name).contains("vMotion")) -or (($_.Name).contains("VSAN")) -or (($_.Name).contains("Management")) -or (($_.Name).contains("mgmt"))} | Select-Object Name, VLanID)
-            write-host ""
+        write-host "Check all Virtual Port Groups and Make sure they are on a different VLan than the Management VLan"
+        (Get-VirtualPortGroup | Select-Object Name, VLanID)
         }
     }
+}
 write-host ""
 write-host "------------ V-256413 ------------";
 Write-host "If IP-Based storage is NOT in use this is Not Applicable"
@@ -550,6 +568,7 @@ foreach ($VMhost in (Get-VMHost)) {
     $iscsi = (Get-VMHost | sort-object name | Get-VMHostHba | Where-Object {$_.Type -like "*iscsi*"} | Select-Object AuthenticationProperties -ExpandProperty AuthenticationProperties)
     if ($iscsi -eq $null) {
         Write-Host "Not Applicable" -ForegroundColor Gray
+        Write-Host "iSCSI not detected"
     }
     else { 
         if ($iscsi.ChapType -ne "required") {
@@ -998,7 +1017,7 @@ write-host "------------ V-256446 ------------"
         Write-Host "Not a Finding" -ForegroundColor Green
     } else {
         Write-Host "Open" -ForegroundColor Red
-        Write-Host "Validate wehter they have a compatible TPM, if not this will be downgraded to a CAT 3"
+        Write-Host "Validate whether they have a compatible TPM, if not this will be downgraded to a CAT 3"
         Write-Output $tpm1
     }
 }
@@ -1011,7 +1030,7 @@ write-host "------------ V-256447 ------------"
         Write-Host "Not a Finding" -ForegroundColor Green
     } else {
         Write-Host "Open" -ForegroundColor Red
-        Write-Host "Validate wehter they have a compatible TPM, if not this will be downgraded to a CAT 3"
+        Write-Host "Validate whether they have a compatible TPM, if not this will be downgraded to a CAT 3"
         Write-Output $tpm2
     }
 }
@@ -1022,7 +1041,7 @@ write-host "------------ V-256448 ------------"
     $disable_cim_running = ((Get-VMHost | Get-VMHostService | Where-Object {$_.Label -eq "CIM Server"}).Running)
     if (($disable_cim_policy -eq "on") -or ($disable_cim_running -eq "True")) {
         Write-Host "Open" -ForegroundColor Red
-        Write-Host ((Get-VMHost | Get-VMHostService | Where-Object {$_.Label -eq "CIM Server"}))
+        Write-Host ((Get-VMHost | Get-VMHostService | Where-Object {$_.Label -eq "CIM Server"})) 
     } else {
         Write-Host "Not a Finding" -ForegroundColor Green
     }

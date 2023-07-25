@@ -13,3 +13,6 @@
     set-executionpolicy remotesigned
     Press Y to only apply to the local user
 
+#3. They will need to connect to the ESXi host or Vcenter where the VM's are located and have administrator credentials
+# Instructions on connecting to the ESXi host
+    Connect-VIServer {hostname/IPaddr}

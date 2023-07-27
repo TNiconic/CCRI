@@ -1,7 +1,10 @@
 #****************************************************************
 #*************Written By Mitchell Gibson USACPB CRIA*************
-#*************Last Updated Jul 25, 2023 v1.0*********************
+#*************Last Updated Jul 27, 2023 v1.0*********************
 #****************************************************************
+
+#20230727
+#Changed V-256471 in accordance with the new STIG released
 
 Clear-Host
 
@@ -30,7 +33,6 @@ for ($i = 1; $i -le $numberOfVMs; $i++) {
     Write-Host "FQDN:" $vm.Guest.HostName
     Write-Host "Role: Member Server"
     Write-Host "Technology Area: Other Review"
-    
     write-host "------------ V-256450 ------------";
     $example1 = (Get-VM $vmName | Get-AdvancedSetting -Name isolation.tools.copy.disable).Value
     if(($example1 -eq $null) -or ($example1 -ne "true")) {
@@ -255,11 +257,14 @@ for ($i = 1; $i -le $numberOfVMs; $i++) {
     write-host ""
     write-host "------------ V-256471 ------------";
     $example20 = (Get-VM $vmname | Get-AdvancedSetting -Name mks.enable3d).Value
-    if(($example20 -eq $null) -or ($example20 -ne "false")) {
-        Write-Host "Open" -ForegroundColor Red
+    if($example20 -eq $null) {
+        Write-Host "Not a Finding" -ForegroundColor Green
         Write-Output $example20
     }
-    else { Write-Host "Not a Finding" -ForegroundColor Green
+    elseif ($example20 -eq "false") {
+        Write-Host "Not a finding" -ForegroundColor Green
+    }
+    else { Write-Host "Red" -ForegroundColor Open
     }
     write-host ""
     write-host "------------ V-256472 ------------";

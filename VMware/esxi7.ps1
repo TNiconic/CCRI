@@ -1,7 +1,10 @@
 #****************************************************************
 #*************Written By Mitchell Gibson USACPB CRIA*************
-#*************Last Updated Jul 23, 2023 v1.0*********************
+#*************Last Updated Jul 27, 2023 v1.0*********************
 #****************************************************************
+
+#20230727
+#Changed V-256385 in accordance with the new STIG released
 
 #At the top for output options, won't appear in script
 write-host "------------ V-256413 ------------";
@@ -153,6 +156,7 @@ write-host "------------ V-256384 ------------"
 }
 write-host ""
 write-host "------------ V-256385 ------------"
+Write-Host "If syslog is not sued for the syslog target, change this to Not Applicable"
 foreach ($VMHosts in (Get-VMHost)) {
     $plink_rhost = (echo yes | plink "$VMHosts" -l root -pw "$result" -batch "/usr/lib/vmware/openssh/bin/sshd -T | grep ignorerhosts")
     if ($plink_rhost -eq "ignorerhosts yes") {

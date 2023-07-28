@@ -9,4 +9,4 @@
 
 
 #Example
-![alt text](https://github.com/TNiconic/CCRI/blob/[branch]/image.jpg?raw=true)
+![alt text](https://github.com/TNiconic/CCRI/blob/main/VMware/vsphere_tutorial.png?raw=true)

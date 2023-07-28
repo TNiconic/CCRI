@@ -482,3 +482,337 @@ else
     echo $esx_unsupported_realms
 fi
 echo " "
+echo "------------ V-256683 ------------"
+esx_internal_packages=$(awk -F'=' '/^package.access=/{print; for (i=1; i<=5; i++) {getline; print}}' /etc/vmware-eam/catalina.properties)
+esx_internal_packages_output=$(cat << EOF
+package.access=\\ 
+sun.,\\ 
+org.apache.catalina.,\\ 
+org.apache.coyote.,\\ 
+org.apache.tomcat.,\\ 
+org.apache.jasper.
+EOF
+)
+esx_internal_packages=$( echo "$esx_internal_packages" | awk '{$1=$1};1' )
+esx_internal_packages_output=$( echo "$esx_internal_packages_output" | awk '{$1=$1};1' )
+if [ "$esx_internal_packages" = "$esx_internal_packages_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_internal_packages
+fi
+echo " "
+echo "------------ V-256684 ------------"
+esx_mime_shell=$(grep -En '(x-csh<)|(x-sh<)|(x-shar<)|(x-ksh<)' /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml)
+if [ "$esx_mime_shell" = "" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_mime_shell
+fi
+echo " "
+echo "------------ V-256685 ------------"
+esx_java_mappings=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/servlet-mapping/servlet-name[text()="JspServlet"]/parent::servlet-mapping' -)
+esx_java_mappings_output=$(cat << EOF
+<servlet-mapping>
+    <servlet-name>JspServlet</servlet-name>
+    <url-pattern>*.jsp</url-pattern>
+  </servlet-mapping>
+EOF
+)
+esx_java_mappings=$( echo "$esx_java_mappings" | awk '{$1=$1};1' )
+esx_java_mappings_output=$( echo "$esx_java_mappings_output" | awk '{$1=$1};1' )
+if [ "$esx_java_mappings" = "$esx_java_mappings_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_java_mappings
+fi
+echo " "
+echo "------------ V-256686 ------------"
+esx_webdav=$(grep -n 'webdav' /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml)
+if [ "$esx_webdav" = "" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_webdav
+fi
+echo " "
+echo "------------ V-256687 ------------"
+esx_leak_protection=$(grep JreMemoryLeakPreventionListener /usr/lib/vmware-eam/web/conf/server.xml)
+esx_leak_protection_output=$(cat << EOF
+<Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
+EOF
+)
+esx_leak_protection=$( echo "$esx_leak_protection" | awk '{$1=$1};1' )
+esx_leak_protection_output=$( echo "$esx_leak_protection_output" | awk '{$1=$1};1' )
+if [ "$esx_leak_protection" = "$esx_leak_protection_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_leak_protection
+fi
+echo " "
+echo "------------ V-256688 ------------"
+esx_web_dir=$(find /usr/lib/vmware-eam/web/webapps/ -type l -ls)
+if [ "$esx_web_dir" = "" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_web_dir
+fi
+echo " "
+echo "------------ V-256689 ------------"
+esx_dir_tree=$(find /usr/lib/vmware-eam/web/ -xdev -type f -a '(' -not -user root -o -not -group root ')' -exec ls -ld {} \;)
+if [ "$esx_dir_tree" = "" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_dir_tree
+fi
+echo " "
+echo "------------ V-256690 ------------"
+esx_safe_state=$(grep EXIT_ON_INIT_FAILURE /etc/vmware-eam/catalina.properties)
+esx_safe_state_output=$(cat << EOF
+org.apache.catalina.startup.EXIT_ON_INIT_FAILURE=true
+EOF
+)
+esx_safe_state=$( echo "$esx_safe_state" | awk '{$1=$1};1' )
+esx_safe_state_output=$( echo "$esx_safe_state_output" | awk '{$1=$1};1' )
+if [ "$esx_safe_state" = "$esx_safe_state_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_safe_state
+fi
+echo " "
+echo "------------ V-256691 ------------"
+esx_allowed_connections=$(xmllint --xpath '/Server/Service/Connector/@acceptCount' /usr/lib/vmware-eam/web/conf/server.xml)
+esx_allowed_connections_output=$(cat << EOF
+acceptCount="300"
+EOF
+)
+esx_allowed_connections=$( echo "$esx_allowed_connections" | awk '{$1=$1};1' )
+esx_allowed_connections_output=$( echo "$esx_allowed_connections_output" | awk '{$1=$1};1' )
+if [ "$esx_allowed_connections" = "$esx_allowed_connections_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_allowed_connections
+fi
+echo " "
+echo "------------ V-256692 ------------"
+esx_uriencoding=$(xmllint --xpath '/Server/Service/Connector/@URIEncoding' /usr/lib/vmware-eam/web/conf/server.xml)
+esx_uriencoding_output=$(cat << EOF
+URIEncoding="UTF-8"
+EOF
+)
+esx_uriencoding=$( echo "$esx_uriencoding" | awk '{$1=$1};1' )
+esx_uriencoding_output=$( echo "$esx_uriencoding_output" | awk '{$1=$1};1' )
+if [ "$esx_uriencoding" = "$esx_uriencoding_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_uriencoding
+fi
+echo " "
+echo "------------ V-256693 ------------"
+esx_character_encoding=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/filter-mapping/filter-name[text()="setCharacterEncodingFilter"]/parent::filter-mapping' -)
+esx_character_encoding_output=$(cat << EOF
+<filter-mapping>
+    <filter-name>setCharacterEncodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+EOF
+)
+esx_character_encoding=$( echo "$esx_character_encoding" | awk '{$1=$1};1' )
+esx_character_encoding_output=$( echo "$esx_character_encoding_output" | awk '{$1=$1};1' )
+if [ "$esx_character_encoding" = "$esx_character_encoding_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_character_encoding
+fi
+echo " "
+echo "------------ V-256694 ------------"
+esx_web_default=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/welcome-file-list' -)
+esx_web_default_output=$(cat << EOF
+<welcome-file-list>
+    <welcome-file>index.jsp</welcome-file>
+  </welcome-file-list>
+EOF
+)
+esx_web_default=$( echo "$esx_web_default" | awk '{$1=$1};1' )
+esx_web_default_output=$( echo "$esx_web_default_output" | awk '{$1=$1};1' )
+if [ "$esx_web_default" = "$esx_web_default_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_web_default
+fi
+echo " "
+echo "------------ V-256695 ------------"
+esx_dir_listings=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '//param-name[text()="listings"]/parent::init-param' - 2>/dev/null)
+esx_dir_listings=$( echo "$esx_dir_listings" | awk '{$1=$1};1' )
+if [  -z "$esx_dir_listings" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_dir_listings
+fi
+echo " "
+echo "------------ V-256696 ------------"
+esx_error_pages=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/error-page/exception-type["text()=java.lang.Throwable"]/parent::error-page' -)
+esx_error_pages_output=$(cat << EOF
+<error-page>
+    <exception-type>java.lang.Throwable</exception-type>
+    <location>/error.jsp</location>
+  </error-page>
+EOF
+)
+esx_error_pages=$( echo "$esx_error_pages" | awk '{$1=$1};1' )
+esx_error_pages_output=$( echo "$esx_error_pages_output" | awk '{$1=$1};1' )
+if [ "$esx_error_pages" = "$esx_error_pages_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_error_pages
+fi
+echo " "
+echo "------------ V-256697 ------------"
+esx_error_reports=$(xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.ErrorReportValve"]' /usr/lib/vmware-eam/web/conf/server.xml)
+esx_error_reports_output=$(cat << EOF
+<Valve className="org.apache.catalina.valves.ErrorReportValve" showServerInfo="false" showReport="false"/>
+EOF
+)
+esx_error_reports=$( echo "$esx_error_reports" | awk '{$1=$1};1' )
+esx_error_reports_output=$( echo "$esx_error_reports_output" | awk '{$1=$1};1' )
+if [ "$esx_error_reports" = "$esx_error_reports_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_error_reports
+fi
+echo " "
+echo "------------ V-256698 ------------"
+esx_server_version=$(xmllint --xpath '/Server/Service/Connector/@server' /usr/lib/vmware-eam/web/conf/server.xml)
+esx_server_version_output=$(cat << EOF
+server="Anonymous"
+EOF
+)
+esx_server_version=$( echo "$esx_server_version" | awk '{$1=$1};1' )
+esx_server_version_output=$( echo "$esx_server_version_output" | awk '{$1=$1};1' )
+if [ "$esx_server_version" = "$esx_server_version_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_server_version
+fi
+echo " "
+echo "------------ V-256699 ------------"
+esx_trace_requests=$(grep allowTrace /usr/lib/vmware-eam/web/conf/server.xml)
+esx_trace_requests_output=$(cat << EOF
+false
+EOF
+)
+esx_trace_requests=$( echo "$esx_trace_requests" | awk '{$1=$1};1' )
+esx_trace_requests_output=$( echo "$esx_trace_requests_output" | awk '{$1=$1};1' )
+if [ "$esx_trace_requests" = "$esx_trace_requests_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$esx_trace_requests" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_trace_requests
+fi
+echo " "
+echo "------------ V-256700 ------------"
+esx_debug_disabled=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '//param-name[text()="debug"]/parent::init-param' - 2>/dev/null)
+esx_debug_disabled_output=$(cat << EOF
+<init-param>
+      <param-name>debug</param-name>
+      <param-value>0</param-value>
+</init-param>
+EOF
+)
+esx_debug_disabled=$( echo "$esx_debug_disabled" | awk '{$1=$1};1' )
+esx_debug_disabled_output=$( echo "$esx_debug_disabled_output" | awk '{$1=$1};1' )
+if [ "$esx_debug_disabled" = "$esx_debug_disabled_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$esx_debug_disabled" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_debug_disabled
+fi
+echo " "
+echo "------------ V-256701 ------------"
+esx_log_files=$(rpm -V VMware-visl-integration|grep vmware-services-eam.conf|grep "^..5......")
+esx_log_files=$( echo "$esx_log_files" | awk '{$1=$1};1' )
+if [  -z "$esx_log_files" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_log_files
+fi
+echo " "
+echo "------------ V-256702 ------------"
+esx_secure_cookies=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/secure' -)
+esx_secure_cookies_output=$(cat << EOF
+<secure>true</secure>
+EOF
+)
+esx_secure_cookies=$( echo "$esx_secure_cookies" | awk '{$1=$1};1' )
+esx_secure_cookies_output=$( echo "$esx_secure_cookies_output" | awk '{$1=$1};1' )
+if [ "$esx_secure_cookies" = "$esx_secure_cookies_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_secure_cookies
+fi
+echo " "
+echo "------------ V-256703 ------------"
+esx_appropriate_ports=$(grep 'bio.http.port' /etc/vmware-eam/catalina.properties)
+esx_appropriate_ports_output=$(cat << EOF
+bio.http.port=15005
+EOF
+)
+esx_appropriate_ports=$( echo "$esx_appropriate_ports" | awk '{$1=$1};1' )
+esx_appropriate_ports_output=$( echo "$esx_appropriate_ports_output" | awk '{$1=$1};1' )
+if [ "$esx_appropriate_ports" = "$esx_appropriate_ports_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_appropriate_ports
+fi
+echo " "
+echo "------------ V-256704 ------------"
+esx_shutdown_port=$(grep 'base.shutdown.port' /etc/vmware-eam/catalina.properties)
+esx_shutdown_port_output=$(cat << EOF
+base.shutdown.port=-1
+EOF
+)
+esx_shutdown_port=$( echo "$esx_shutdown_port" | awk '{$1=$1};1' )
+esx_shutdown_port_output=$( echo "$esx_shutdown_port_output" | awk '{$1=$1};1' )
+if [ "$esx_shutdown_port" = "$esx_shutdown_port_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_shutdown_port
+fi
+echo " "
+echo "------------ V-256705 ------------"
+esx_servlet_readonly=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '/web-app/servlet/servlet-name[text()="default"]/../init-param/param-name[text()="readonly"]/../param-value[text()="false"]' - 2>/dev/null)
+esx_servlet_readonly=$( echo "$esx_servlet_readonly" | awk '{$1=$1};1' )
+if [  -z "$esx_servlet_readonly" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_servlet_readonly
+fi
+echo " "
+echo " "
+echo ---------------------------------------------------------------------------------------------------------------
+echo ----------VMware vSphere 7.0 vCenter Appliance Lookup Service Security Technical Implementation Guide----------
+echo ---------------------------------------------------------------------------------------------------------------
+echo " "

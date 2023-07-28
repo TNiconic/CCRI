@@ -3,3 +3,10 @@
 #First you must enable SSH to the vSphere client
 
 #Then, SSH as the local user (usually root) then you will see a prompt
+
+
+
+
+
+#Example
+![alt text](https://github.com/TNiconic/CCRI/blob/[branch]/image.jpg?raw=true)

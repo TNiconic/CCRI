@@ -1468,7 +1468,7 @@ if [  -z "$pc_permissions_state" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
 else
     echo -e "\e[31mOpen\e[0m"
-    find /usr/lib/vmware-perfcharts/tc-instance/webapps/ -xdev -type f -a '(' -not -user root -a -not -user perfcharts -o -not -group root ')' -exec ls -la {} \;
+    find /usr/lib/vmware-perfcharts/tc-instance/webapps/ -xdev -type f -a '(' -not -user root -a -not -user perfcharts -o -not -group root ')' -exec ls -la {} \; | tail
 fi
 echo " "
 echo "------------ V-256628 ------------"
@@ -1933,5 +1933,1255 @@ if [ "$photon_priv_functions" = "$photon_priv_functions_output" ]; then
 else
     echo -e "\e[31mOpen\e[0m"
     echo $photon_priv_functions
+fi
+echo " "
+echo "------------ V-256490 ------------"
+photon_auditd_status=$(systemctl is-active auditd 2>/dev/null)
+photon_auditd_status_output="active"
+photon_auditd_status=$(echo "$photon_auditd_status" | awk '{$1=$1};1' | tr '[:upper:]' '[:lower:]')
+photon_auditd_status_output=$(echo "$photon_auditd_status_output" | tr '[:upper:]' '[:lower:]')
+if [ "$photon_auditd_status" = "$photon_auditd_status_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo "Auditd is $photon_auditd_status"
+fi
+echo " "
+echo "------------ V-256491 ------------"
+photon_log_space=$(grep "^space_left_action" /etc/audit/auditd.conf)
+photon_log_space_output=$(cat << EOF
+space_left_action = SYSLOG
+EOF
+)
+photon_log_space=$( echo "$photon_log_space" | awk '{$1=$1};1' )
+photon_log_space_output=$( echo "$photon_log_space_output" | awk '{$1=$1};1' )
+if [ "$photon_log_space" = "$photon_log_space_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_log_space
+fi
+echo " "
+echo "------------ V-256492 ------------"
+photon_log_syslog=$(grep -E "^disk_full_action|^disk_error_action|^admin_space_left_action" /etc/audit/auditd.conf)
+photon_log_syslog_output=$(cat << EOF
+admin_space_left_action = SYSLOG
+disk_full_action = SYSLOG
+disk_error_action = SYSLOG
+EOF
+)
+photon_log_syslog=$( echo "$photon_log_syslog" | awk '{$1=$1};1' )
+photon_log_syslog_output=$( echo "$photon_log_syslog_output" | awk '{$1=$1};1' )
+if [ "$photon_log_syslog" = "$photon_log_syslog_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_log_syslog
+fi
+echo " "
+echo "------------ V-256493 ------------"
+photon_output_array=($(audit_log_file=$(grep "^log_file" /etc/audit/auditd.conf | sed s/^[^\/]*//); if [ -f "${audit_log_file}" ]; then stat -c "%a" ${audit_log_file%}*; fi))
+photon_found_open=false
+for number in "${photon_output_array[@]}"; do
+    first_digit=${number:0:1}
+    last_two_digits=${number:1}
+    if [ "$first_digit" -eq 7 ] || [ "$last_two_digits" -ne 0 ]; then
+        photon_found_open=true
+        break
+    fi
+done
+if $photon_found_open; then
+    echo -e "\e[31mOpen\e[0m"
+    (audit_log_file=$(grep "^log_file" /etc/audit/auditd.conf|sed s/^[^\/]*//) && if [ -f "${audit_log_file}" ] ; then printf "Log(s) found in "${audit_log_file%/*}":\n"; stat -c "%n permissions are %a" ${audit_log_file%}*; else printf "audit log file(s) not found\n"; fi)
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256494 ------------"
+photon_root_log=$(audit_log_file1=$(grep "^log_file" /etc/audit/auditd.conf | sed s/^[^\/]*//) && if [ -f "${audit_log_file1}" ]; then stat -c "%n is owned by %U" ${audit_log_file1%}* | grep -v "is owned by root" | sed 's/Log(s) found in .*://' ; else printf "audit log file(s) not found\n"; fi)
+photon_root_log=$( echo "$photon_root_log" | awk '{$1=$1};1' )
+if [ -z "$photon_root_log" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    audit_log_file2=$(grep "^log_file" /etc/audit/auditd.conf | sed s/^[^\/]*//)
+    photon_root_log2=$(audit_log_file2=$(grep "^log_file" /etc/audit/auditd.conf | sed s/^[^\/]*//) && if [ -f "${audit_log_file2}" ]; then stat -c "%n is owned by %U" ${audit_log_file2%}* ; else printf "audit log file(s) not found\n"; fi)
+    photon_root_log2=$(echo "$photon_root_log2" | awk '{$1=$1};1')
+    echo "$photon_root_log2"
+fi
+echo " "
+echo "------------ V-256495 ------------"
+photon_root_group_log=$(audit_log_file1=$(grep "^log_file" /etc/audit/auditd.conf | sed s/^[^\/]*//) && if [ -f "${audit_log_file1}" ]; then stat -c "%n is owned by %G" ${audit_log_file1%}* | grep -v "root" | sed 's/Log(s) found in .*://' ; else printf "audit log file(s) not found\n"; fi)
+photon_root_group_log=$( echo "$photon_root_group_log" | awk '{$1=$1};1' )
+if [ -z "$photon_root_group_log" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    audit_log_file2=$(grep "^log_file" /etc/audit/auditd.conf | sed s/^[^\/]*//)
+    photon_root_group_log2=$(audit_log_file2=$(grep "^log_file" /etc/audit/auditd.conf | sed s/^[^\/]*//) && if [ -f "${audit_log_file2}" ]; then stat -c "%n is owned by %G" ${audit_log_file2%}* ; else printf "audit log file(s) not found\n"; fi)
+    photon_root_group_log2=$(echo "$photon_root_group_log2" | awk '{$1=$1};1')
+    echo "$photon_root_group_log2"
+fi
+echo " "
+echo "------------ V-256496 ------------"
+photon_output_array_2=($(find /etc/audit/* -type f -exec stat -c "%a" {} $1\;))
+photon_found_open_2=false
+for number in "${photon_output_array_2[@]}"; do
+    first_digit=${number:0:1}
+    second_digit=${number:1:1}
+    third_digit=${number:2:1}
+    if [ "$first_digit" -eq 7 ] || [ "$second_digit" -eq 6 ] || [ "$second_digit" -eq 5 ] || [ "$second_digit" -eq 7 ] || [ "$third_digit" -ne 0 ]; then
+        photon_found_open_2=true
+        break
+    fi
+done
+if $photon_found_open_2; then
+    echo -e "\e[31mOpen\e[0m"
+    find /etc/audit/* -type f -exec stat -c "%n permissions are %a" {} $1\;
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256497 ------------"
+photon_access_privilege=$(auditctl -l | grep chmod)
+photon_access_privilege_output=$(cat << EOF
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,fchownat,fchmodat -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,lchown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,fchmod,fchown,chown,fchownat,fchmodat -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,lchown,fchmod,fchown,chown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F key=perm_mod
+EOF
+)
+photon_access_privilege_output_2=$(cat << EOF
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,fchownat,fchmodat -F auid>=1000 -F auid!=-1 -F key=perm_mod
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,lchown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,fchmod,fchown,chown,fchownat,fchmodat -F auid>=1000 -F auid!=-1 -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,lchown,fchmod,fchown,chown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F key=perm_mod
+EOF
+)
+photon_access_privilege=$( echo "$photon_access_privilege" | awk '{$1=$1};1' )
+photon_access_privilege_output=$( echo "$photon_access_privilege_output" | awk '{$1=$1};1' )
+photon_access_privilege_output_2=$( echo "$photon_access_privilege_output_2" | awk '{$1=$1};1' )
+if [ "$photon_access_privilege" = "$photon_access_privilege_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif    [ "$photon_access_privilege" = "$photon_access_privilege_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_access_privilege
+fi
+echo " "
+echo "------------ V-256498 ------------"
+photon_password_one_upper=$(grep pam_cracklib /etc/pam.d/system-password|grep --color=always "ucredit=..")
+photon_password_one_upper=$( echo "$photon_password_one_upper" | awk '{$1=$1};1' )
+if [[ "$photon_password_one_upper" == *"ucredit=-1"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_password_one_upper
+fi
+echo " "
+echo "------------ V-256499 ------------"
+photon_password_one_lower=$(grep pam_cracklib /etc/pam.d/system-password|grep --color=always "lcredit=..")
+photon_password_one_lower=$( echo "$photon_password_one_lower" | awk '{$1=$1};1' )
+if [[ "$photon_password_one_lower" == *"lcredit=-1"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_password_one_lower
+fi
+echo " "
+echo "------------ V-256500 ------------"
+photon_password_one_num=$(grep pam_cracklib /etc/pam.d/system-password|grep --color=always "difok=.")
+photon_password_one_num=$( echo "$photon_password_one_num" | awk '{$1=$1};1' )
+if [[ "$photon_password_one_num" == *"dcredit=-1"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_password_one_num
+fi
+echo " "
+echo "------------ V-256501 ------------"
+photon_password_four_diff=$(grep pam_cracklib /etc/pam.d/system-password)
+photon_password_four_diff_output=$(echo "$photon_password_four_diff" | awk -F 'difok=' '{print $2}' | cut -d ' ' -f 1)
+if [ "$photon_password_four_diff_output" -ge 4 ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_password_four_diff
+fi
+echo " "
+echo "------------ V-256502 ------------"
+photon_encrypted_passwords=$(grep SHA512 /etc/login.defs|grep -v "#")
+photon_encrypted_passwords_output=$(cat << EOF
+ENCRYPT_METHOD SHA512
+EOF
+)
+photon_encrypted_passwords=$( echo "$photon_encrypted_passwords" | awk '{$1=$1};1' )
+photon_encrypted_passwords_output=$( echo "$photon_encrypted_passwords_output" | awk '{$1=$1};1' )
+if [ "$photon_encrypted_passwords" = "$photon_encrypted_passwords_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_encrypted_passwords
+fi
+echo " "
+echo "------------ V-256503 ------------"
+version_compare() {
+    if [[ "$1" == "$2" ]]; then
+        return 0
+    fi
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
+        ver1[i]=0
+    done
+    for ((i=0; i<${#ver1[@]}; i++)); do
+        if [[ -z ${ver2[i]} ]]; then
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]})); then
+            return 1
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]})); then
+            return 2
+        fi
+    done
+    return 0
+}
+photon_openssh_version=$(rpm -qa | grep openssh | grep -v server | grep -v client | awk -F- '{print $2}' | sed 's/p.*$//')
+photon_required_version="7.4"
+version_compare "$photon_openssh_version" "$photon_required_version"
+photon_comparison_result=$?
+if [[ $photon_comparison_result -eq 1 ]]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo rpm -qa|grep openssh
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256504 ------------"
+photon_newuser_minimum=$(grep "^PASS_MIN_DAYS" /etc/login.defs)
+photon_newuser_minimum_output=$(cat << EOF
+PASS_MIN_DAYS   1
+EOF
+)
+photon_newuser_minimum=$( echo "$photon_newuser_minimum" | awk '{$1=$1};1' )
+photon_newuser_minimum_output=$( echo "$photon_newuser_minimum_output" | awk '{$1=$1};1' )
+if [ "$photon_newuser_minimum" = "$photon_newuser_minimum_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_newuser_minimum
+fi
+echo " "
+echo "------------ V-256505 ------------"
+photon_newuser_maximum=$(grep "^PASS_MAX_DAYS" /etc/login.defs)
+photon_newuser_maximum_output=$(cat << EOF
+PASS_MAX_DAYS   90
+EOF
+)
+photon_newuser_maximum=$( echo "$photon_newuser_maximum" | awk '{$1=$1};1' )
+photon_newuser_maximum_output=$( echo "$photon_newuser_maximum_output" | awk '{$1=$1};1' )
+if [ "$photon_newuser_maximum" = "$photon_newuser_maximum_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_newuser_maximum
+fi
+echo " "
+echo "------------ V-256506 ------------"
+photon_password_five_gen=$(grep pam_pwhistory /etc/pam.d/system-password|grep --color=always "remember=.")
+photon_password_five_gen=$( echo "$photon_password_five_gen" | awk '{$1=$1};1' )
+if [[ "$photon_password_five_gen" == *"remember=5"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_password_five_gen
+fi
+echo " "
+echo "------------ V-256507 ------------"
+photon_password_eight_length=$(grep pam_cracklib /etc/pam.d/system-password|grep --color=always "minlen=..")
+photon_password_eight_length_output=$(echo "$photon_password_eight_length" | awk -F 'minlen=' '{print $2}' | cut -d ' ' -f 1)
+if [ "$photon_password_eight_length_output" -ge 8 ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_password_eight_length
+fi
+echo " "
+echo "------------ V-256508 ------------"
+photon_grub_login=$(grep -i ^password_pbkdf2 /boot/grub2/grub.cfg)
+photon_grub_login_output=$(cat << EOF
+"password_pbkdf2 root"
+EOF
+)
+photon_grub_login=$( echo "$photon_grub_login" | awk '{$1=$1};1' )
+photon_grub_login_output=$( echo "$photon_grub_login_output" | awk '{$1=$1};1' )
+if [ -z "$photon_grub_login" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "No output"
+elif [[ "$photon_grub_login" == "$photon_grub_login_output"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_grub_login
+fi
+echo " "
+echo "------------ V-256509 ------------"
+photon_unnecessary_modules=$(modprobe --showconfig | grep "^install" | grep "/bin")
+photon_unnecessary_modules_output=$(cat << EOF
+install sctp /bin/false
+install dccp /bin/false
+install dccp_ipv4 /bin/false
+install dccp_ipv6 /bin/false
+install ipx /bin/false
+install appletalk /bin/false
+install decnet /bin/false
+install rds /bin/false
+install tipc /bin/false
+install bluetooth /bin/false
+install usb_storage /bin/false
+install ieee1394 /bin/false
+install cramfs /bin/false
+install freevxfs /bin/false
+install jffs2 /bin/false
+install hfs /bin/false
+install hfsplus /bin/false
+install squashfs /bin/false
+install udf /bin/false
+EOF
+)
+photon_unnecessary_modules=$( echo "$photon_unnecessary_modules" | awk '{$1=$1};1' )
+photon_unnecessary_modules_output=$( echo "$photon_unnecessary_modules_output" | awk '{$1=$1};1' )
+if [[ "$photon_unnecessary_modules" == *"$photon_unnecessary_modules_output"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_unnecessary_modules
+fi
+echo " "
+echo "------------ V-256510 ------------"
+photon_user_ids=$(awk -F ":" 'list[$3]++{print $1, $3}' /etc/passwd)
+photon_user_ids=$( echo "$photon_user_ids" | awk '{$1=$1};1' )
+if [  -z "$photon_user_ids" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_user_ids
+fi
+echo " "
+echo "------------ V-256511 ------------"
+photon_disable_password=$(grep INACTIVE /etc/default/useradd)
+photon_disable_password_output=$(cat << EOF
+INACTIVE=0
+EOF
+)
+photon_disable_password=$( echo "$photon_disable_password" | awk '{$1=$1};1' )
+photon_disable_password_output=$( echo "$photon_disable_password_output" | awk '{$1=$1};1' )
+if [ "$photon_disable_password" = "$photon_disable_password_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_disable_password
+fi
+echo " "
+echo "------------ V-256512 ------------"
+photon_tcp_syncookies=$(/sbin/sysctl -a --pattern tcp_syncookies)
+photon_tcp_syncookies_output=$(cat << EOF
+net.ipv4.tcp_syncookies = 1
+EOF
+)
+photon_tcp_syncookies=$( echo "$photon_tcp_syncookies" | awk '{$1=$1};1' )
+photon_tcp_syncookies_output=$( echo "$photon_tcp_syncookies_output" | awk '{$1=$1};1' )
+if [ "$photon_tcp_syncookies" = "$photon_tcp_syncookies_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_tcp_syncookies
+fi
+echo " "
+echo "------------ V-256513 ------------"
+photon_ssh_idle=$(sshd -T|&grep -i ClientAliveInterval)
+photon_ssh_idle_output=$(cat << EOF
+ClientAliveInterval 900
+EOF
+)
+photon_ssh_idle=$( echo "$photon_ssh_idle" | awk '{$1=$1};1' )
+photon_ssh_idle_output=$( echo "$photon_ssh_idle_output" | awk '{$1=$1};1' )
+if [ "$photon_ssh_idle" = "$photon_ssh_idle_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_ssh_idle
+fi
+echo " "
+echo "------------ V-256514 ------------"
+photon_ssh_idle_2=$(sshd -T|&grep -i ClientAliveCountMax)
+photon_ssh_idle_2_output=$(cat << EOF
+ClientAliveCountMax 0
+EOF
+)
+photon_ssh_idle_2=$( echo "$photon_ssh_idle_2" | awk '{$1=$1};1' )
+photon_ssh_idle_2_output=$( echo "$photon_ssh_idle_2_output" | awk '{$1=$1};1' )
+if [ "$photon_ssh_idle_2" = "$photon_ssh_idle_2_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_ssh_idle_2
+fi
+echo " "
+echo "------------ V-256515 ------------"
+photon_ssh_idle_2=$(stat -c "%n is owned by %U and group owned by %G" /var/log | awk '{print $5}')
+photon_ssh_idle_2_output=$(cat << EOF
+root
+EOF
+)
+photon_varlog_root=$( echo "$photon_varlog_root" | awk '{$1=$1};1' )
+photon_varlog_root_output=$( echo "$photon_varlog_root_output" | awk '{$1=$1};1' )
+if [ "$photon_varlog_root" = "$photon_varlog_root_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_varlog_root
+fi
+echo " "
+echo "------------ V-256516 ------------"
+photon_varlog_messages=($(stat -c "%n is owned by %U and group owned by %G with %a permissions" /var/log/messages | awk '{print $12}'))
+photon_varlog_messages_user=$(stat -c "%n is owned by %U and group owned by %G" /var/log/messages | awk '{print $5}')
+photon_varlog_messages_output=$(cat << EOF
+root
+EOF
+)
+photon_varlog_messages_group=$(stat -c "%n is owned by %U and group owned by %G" /var/log/messages | awk '{print $10}')
+photon_varlog_messages_open=false
+for number in "${photon_varlog_messages[@]}"; do
+    first_digit=${number:0:1}
+    second_digit=${number:1:1}
+    third_digit=${number:2:1}
+    if [ "$first_digit" -eq 7 ] || [ "$second_digit" -eq 6 ] || [ "$second_digit" -eq 5 ] || [ "$second_digit" -eq 7 ] || [ "$third_digit" -ne 0 ]; then
+        photon_varlog_messages_open=true
+        break
+    fi
+done
+if $photon_varlog_messages_open; then
+    echo -e "\e[31mOpen\e[0m"
+    stat -c "%n is owned by %U and group owned by %G with %a permissions" /var/log/messages
+elif [ "$photon_varlog_messages_user" != "$photon_varlog_messages_output" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    stat -c "%n is owned by %U and group owned by %G with %a permissions" /var/log/messages
+elif [ "$photon_varlog_messages_group" != "$photon_varlog_messages_output" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    stat -c "%n is owned by %U and group owned by %G with %a permissions" /var/log/messages
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256517 ------------"
+photon_account_mod=$(auditctl -l | grep -E "(usermod|groupmod)")
+photon_account_mod_output=$(cat << EOF
+-w /usr/sbin/usermod -p x -k usermod
+-w /usr/sbin/groupmod -p x -k groupmod
+EOF
+)
+photon_account_mod=$( echo "$photon_account_mod" | awk '{$1=$1};1' )
+photon_account_mod_output=$( echo "$photon_account_mod_output" | awk '{$1=$1};1' )
+if [ "$photon_account_mod" = "$photon_account_mod_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_account_mod
+fi
+echo " "
+echo "------------ V-256518 ------------"
+photon_account_mod_2=$(auditctl -l | grep -E "(/etc/passwd|/etc/shadow|/etc/group|/etc/gshadow)")
+photon_account_mod_2_output=$(cat << EOF
+-w /etc/passwd -p wa -k passwd
+-w /etc/shadow -p wa -k shadow
+-w /etc/group -p wa -k group
+-w /etc/gshadow -p wa -k gshadow
+EOF
+)
+photon_account_mod_2=$( echo "$photon_account_mod_2" | awk '{$1=$1};1' )
+photon_account_mod_2_output=$( echo "$photon_account_mod_2_output" | awk '{$1=$1};1' )
+if [ "$photon_account_mod_2" = "$photon_account_mod_2_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_account_mod_2
+fi
+echo " "
+echo "------------ V-256519 ------------"
+photon_account_disabling=$(auditctl -l | grep "w /usr/bin/passwd")
+photon_account_disabling_output=$(cat << EOF
+-w /usr/bin/passwd -p x -k passwd
+EOF
+)
+photon_account_disabling=$( echo "$photon_account_disabling" | awk '{$1=$1};1' )
+photon_account_disabling_output=$( echo "$photon_account_disabling_output" | awk '{$1=$1};1' )
+if [ "$photon_account_disabling" = "$photon_account_disabling_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_account_disabling
+fi
+echo " "
+echo "------------ V-256520 ------------"
+photon_account_removal=$(auditctl -l | grep -E "(userdel|groupdel)")
+photon_account_removal_output=$(cat << EOF
+-w /usr/sbin/userdel -p x -k userdel
+-w /usr/sbin/groupdel -p x -k groupdel
+EOF
+)
+photon_account_removal=$( echo "$photon_account_removal" | awk '{$1=$1};1' )
+photon_account_removal_output=$( echo "$photon_account_removal_output" | awk '{$1=$1};1' )
+if [ "$photon_account_removal" = "$photon_account_removal_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_account_removal
+fi
+echo " "
+echo "------------ V-256521 ------------"
+photon_cmd_logging=$(grep "audit=1" /proc/cmdline)
+photon_cmd_logging=$( echo "$photon_cmd_logging" | awk '{$1=$1};1' )
+if [ -z "$photon_cmd_logging" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "No output"
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256522 ------------"
+photon_audit_permissions_user=$(stat -c "%n is owned by %U and group owned by %G" /etc/audit/auditd.conf | awk '{print $5}')
+photon_audit_permissions_group=$(stat -c "%n is owned by %U and group owned by %G" /etc/audit/auditd.conf | awk '{print $10}')
+photon_audit_permissions_output=$(cat << EOF
+root
+EOF
+)
+if [ "$photon_audit_permissions_user" = "$photon_audit_permissions_output" ] && [ "$photon_audit_permissions_group" = "$photon_audit_permissions_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_audit_permissions
+fi
+echo " "
+echo "------------ V-256523 ------------"
+photon_audit_tools=($(stat -c "%n is owned by %U and group owned by %G and permissions are %a" /usr/sbin/auditctl /usr/sbin/auditd /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/autrace | awk '{print$14}'))
+photon_audit_tools_user=($(stat -c "%n is owned by %U and group owned by %G and permissions are %a" /usr/sbin/auditctl /usr/sbin/auditd /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/autrace | awk '{print$5}'))
+photon_audit_tools_output=$(cat << EOF
+root
+EOF
+)
+photon_audit_tools_group=($(stat -c "%n is owned by %U and group owned by %G and permissions are %a" /usr/sbin/auditctl /usr/sbin/auditd /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/autrace | awk '{print$10}'))
+photon_audit_tools_user_open=false
+for owner in "${photon_audit_tools_user[@]}"; do
+    if [[ "$owner" != "$photon_audit_tools_output" ]]; then
+        photon_audit_tools_user_open=true
+        break
+    fi
+done
+photon_audit_tools_group_open=false
+for group in "${photon_audit_tools_group[@]}"; do
+    if [[ "$group" != "$photon_audit_tools_output" ]]; then
+        photon_audit_tools_group_open=true
+        break
+    fi
+done
+photon_audit_tools_open=false
+for number in "${photon_audit_tools[@]}"; do
+    first_digit=${number:0:1}
+    second_digit=${number:1:1}
+    third_digit=${number:2:1}
+    if [ "$second_digit" -eq 6 ] || [ "$second_digit" -eq 7 ] || [ "$third_digit" -ne 0 ]; then
+        photon_audit_tools_open=true
+        break
+    fi
+done
+if $photon_audit_tools_open; then
+    echo -e "\e[31mOpen\e[0m"
+    stat -c "%n is owned by %U and group owned by %G and permissions are %a" /usr/sbin/auditctl /usr/sbin/auditd /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/autrace
+elif $photon_audit_tools_user_open; then
+    echo -e "\e[31mOpen\e[0m"
+    stat -c "%n is owned by %U and group owned by %G and permissions are %a" /usr/sbin/auditctl /usr/sbin/auditd /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/autrace
+elif $photon_audit_tools_group_open; then
+    echo -e "\e[31mOpen\e[0m"
+    stat -c "%n is owned by %U and group owned by %G and permissions are %a" /usr/sbin/auditctl /usr/sbin/auditd /usr/sbin/aureport /usr/sbin/ausearch /usr/sbin/autrace
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256524 ------------"
+photon_password_one_special=$(grep pam_cracklib /etc/pam.d/system-password|grep --color=always "ocredit=..")
+photon_password_one_special=$( echo "$photon_password_one_special" | awk '{$1=$1};1' )
+if [[ "$photon_password_one_special" == *"ocredit=-1"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_password_one_special
+fi
+echo " "
+echo "------------ V-256525 ------------"
+photon_system_modified=$(rpm -V audit | grep "^..5" | grep -v "^...........c")
+photon_system_modified=$( echo "$photon_system_modified" | awk '{$1=$1};1' )
+if [  -z "$photon_system_modified" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_system_modified
+fi
+echo " "
+echo "------------ V-256526 ------------"
+photon_audit_privfunc=()
+while IFS= read -r line; do
+    photon_audit_privfunc+=("$line")
+done < <(find / -xdev -path /var/lib/containerd -prune -o \( -perm -4000 -type f -o -perm -2000 \) -type f -print | sort)
+photon_audit_privfunc_open=false
+photon_audit_privfunc_output=""
+for t in "${photon_audit_privfunc[@]}"; do
+    photon_audit_privfunc_output=$(auditctl -l | grep "$t")
+    if [ -z "$t" ]; then
+        photon_audit_privfunc_open=true
+        break
+    fi
+done
+if $photon_audit_privfunc_open; then
+    echo -e "\e[31mOpen\e[0m"
+    printf '%s\n' "${photon_audit_privfunc[@]}"
+else 
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256527 ------------"
+photon_audit_five_logs=$(grep "^num_logs" /etc/audit/auditd.conf)
+photon_audit_five_logs_output=$(cat << EOF
+num_logs = 5
+EOF
+)
+photon_audit_five_logs=$( echo "$photon_audit_five_logs" | awk '{$1=$1};1' )
+photon_audit_five_logs_output=$( echo "$photon_audit_five_logs_output" | awk '{$1=$1};1' )
+if [ "$photon_audit_five_logs" = "$photon_audit_five_logs_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_audit_five_logs
+fi
+echo " "
+echo "------------ V-256528 ------------"
+photon_audit_max_logs=$(grep "^max_log_file_action" /etc/audit/auditd.conf)
+photon_audit_max_logs_bad_output=$(cat << EOF
+max_log_file_action = ROTATE
+max_log_file_action = IGNORE
+EOF
+)
+photon_audit_max_logs_ignore_output=$(cat << EOF
+max_log_file_action = IGNORE
+EOF
+)
+photon_audit_max_logs_rotate_output=$(cat << EOF
+max_log_file_action = ROTATE
+EOF
+)
+photon_audit_max_logs=$( echo "$photon_audit_max_logs" | awk '{$1=$1};1' )
+photon_audit_max_logs_output=$( echo "$photon_audit_max_logs_output" | awk '{$1=$1};1' )
+photon_audit_max_logs_ignore_output=$( echo "$photon_audit_max_logs_ignore_output" | awk '{$1=$1};1' )
+photon_audit_max_logs_rotate_output=$( echo "$photon_audit_max_logs_rotate_output" | awk '{$1=$1};1' )
+if [ "$photon_audit_max_logs" = "$photon_audit_max_logs_output" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "Both options are set"
+    echo $photon_audit_max_logs
+elif [ "$photon_audit_max_logs" = "$photon_audit_max_logs_rotate_output" ]; then
+    echo "Validate that logs are not rotated outisde of auditd"
+    echo -e "\e[32mNot a Finding\e[0m"
+    echo $photon_audit_max_logs
+elif [ "$photon_audit_max_logs" = "$photon_audit_max_logs_ignore_output" ]; then
+    echo "Validate that logs are rotated outisde of auditd"
+    echo -e "\e[32mNot a Finding\e[0m"
+    echo $photon_audit_max_logs
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_audit_max_logs
+fi
+echo " "
+echo "------------ V-256529 ------------"
+photon_audit_space_syslog=$(grep "^space_left " /etc/audit/auditd.conf)
+photon_audit_space_syslog_output=$(cat << EOF
+space_left = 75
+EOF
+)
+photon_audit_space_syslog=$( echo "$photon_audit_space_syslog" | awk '{$1=$1};1' )
+photon_audit_space_syslog_output=$( echo "$photon_audit_space_syslog_output" | awk '{$1=$1};1' )
+if [ "$photon_audit_space_syslog" = "$photon_audit_space_syslog_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_audit_space_syslog
+fi
+echo " "
+echo "------------ V-256530 ------------"
+photon_crypto_verify=$(grep -s nosignature /usr/lib/rpm/rpmrc /etc/rpmrc ~root/.rpmrc)
+photon_crypto_verify=$( echo "$photon_crypto_verify" | awk '{$1=$1};1' )
+if [  -z "$photon_crypto_verify" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_crypto_verify
+fi
+echo " "
+echo "------------ V-256531 ------------"
+photon_crypto_verify_launch=$(grep "^gpgcheck" /etc/tdnf/tdnf.conf)
+photon_crypto_verify_launch_output=$(cat << EOF
+gpgcheck=1
+EOF
+)
+photon_crypto_verify_launch=$( echo "$photon_crypto_verify_launch" | awk '{$1=$1};1' )
+photon_crypto_verify_launch_output=$( echo "$photon_crypto_verify_launch_output" | awk '{$1=$1};1' )
+if [ "$photon_crypto_verify_launch" = "$photon_crypto_verify_launch_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_crypto_verify_launch
+fi
+echo " "
+echo "------------ V-256532 ------------"
+photon_crypto_yum=($(grep gpgcheck /etc/yum.repos.d/* | awk -F 'gpgcheck=' '{print $2}'))
+photon_crypto_yum_check=false
+for num in "${photon_crypto_yum[@]}"; do
+    if [[ "$num" != 1 ]]; then
+        photon_crypto_yum_check=true
+        break
+    fi
+done
+if $photon_crypto_yum_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(grep gpgcheck /etc/yum.repos.d/*)
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256533 ------------"
+photon_reauth_priv=$(grep -ihs nopasswd /etc/sudoers /etc/sudoers.d/* | grep -v "^#" | grep -v "^%" | awk '{print $1}')
+photon_reauth_priv_2=$(awk -F: '($2 != "x" && $2 != "!") {print $1}' /etc/shadow)
+photon_reauth_priv_check=false
+for user in $photon_reauth_priv; do
+    if [[ " $photon_reauth_priv_2 " == *" $user "* ]]; then
+        photon_reauth_priv_check=true
+    fi
+done
+if $photon_reauth_priv_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(grep -ihs nopasswd /etc/sudoers /etc/sudoers.d/* | grep -v "^#" | grep -v "^%" | awk '{print $1}')
+    echo $(awk -F: '($2 != "x" && $2 != "!") {print $1}' /etc/shadow)
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256534 ------------"
+photon_crypto_ciphers=$(sshd -T|&grep -i Ciphers)
+photon_crypto_ciphers_output_1=$(cat << EOF
+ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+EOF
+)
+photon_crypto_ciphers_output_2=$(cat << EOF
+ciphers aes256-ctr,aes192-ctr,aes128-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com
+EOF
+)
+photon_crypto_ciphers_output_3=$(cat << EOF
+ciphers aes128-ctr,aes192-ctr,aes256-ctr,aes256-gcm@openssh.com,aes128-gcm@openssh.com
+EOF
+)
+photon_crypto_ciphers_output_4=$(cat << EOF
+ciphers aes128-gcm@openssh.com,aes256-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+EOF
+)
+photon_crypto_ciphers=$( echo "$photon_crypto_ciphers" | awk '{$1=$1};1' )
+photon_crypto_ciphers_output=$( echo "$photon_crypto_ciphers_output" | awk '{$1=$1};1' )
+photon_crypto_ciphers_output_2=$( echo "$photon_crypto_ciphers_output_2" | awk '{$1=$1};1' )
+photon_crypto_ciphers_output_3=$( echo "$photon_crypto_ciphers_output_3" | awk '{$1=$1};1' )
+photon_crypto_ciphers_output_4=$( echo "$photon_crypto_ciphers_output_4" | awk '{$1=$1};1' )
+if [ "$photon_crypto_ciphers" = "$photon_crypto_ciphers_output" ] || [ "$photon_crypto_ciphers" = "$photon_crypto_ciphers_output_2" ] || [ "$photon_crypto_ciphers" = "$photon_crypto_ciphers_output_3" ] || [ "$photon_crypto_ciphers" = "$photon_crypto_ciphers_output_4" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_crypto_ciphers
+fi
+echo " "
+echo "------------ V-256535 ------------"
+photon_aslr_check=$(cat /proc/sys/kernel/randomize_va_space)
+photon_aslr_check_output=$(cat << EOF
+2
+EOF
+)
+photon_aslr_check=$( echo "$photon_aslr_check" | awk '{$1=$1};1' )
+photon_aslr_check_output=$( echo "$photon_aslr_check_output" | awk '{$1=$1};1' )
+if [ "$photon_aslr_check" = "$photon_aslr_check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_aslr_check
+fi
+echo " "
+echo "------------ V-256536 ------------"
+photon_updated_versions=$(grep -i "^clean_requirements_on_remove" /etc/tdnf/tdnf.conf)
+photon_updated_versions_output=$(cat << EOF
+clean_requirements_on_remove=true
+EOF
+)
+photon_updated_versions=$( echo "$photon_updated_versions" | awk '{$1=$1};1' )
+photon_updated_versions_output=$( echo "$photon_updated_versions_output" | awk '{$1=$1};1' )
+if [ "$photon_updated_versions" = "$photon_updated_versions_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_updated_versions
+fi
+echo " "
+echo "------------ V-256537 ------------"
+photon_sudo_audit=$(auditctl -l | grep sudo)
+photon_sudo_audit_output=$(cat << EOF
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=1000 -F auid!=4294967295 -F key=privileged
+EOF
+)
+photon_sudo_audit_output_2=$(cat << EOF
+-a always,exit -S all -F path=/usr/bin/sudo -F perm=x -F auid>=1000 -F auid!=-1 -F key=privileged
+EOF
+)
+photon_sudo_audit=$( echo "$photon_sudo_audit" | awk '{$1=$1};1' )
+photon_sudo_audit_output=$( echo "$photon_sudo_audit_output" | awk '{$1=$1};1' )
+photon_sudo_audit_output_2=$( echo "$photon_sudo_audit_output_2" | awk '{$1=$1};1' )
+if [ "$photon_sudo_audit" = "$photon_sudo_audit_output" ] || [ "$photon_sudo_audit" = "$photon_sudo_audit_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_sudo_audit
+fi
+echo " "
+echo "------------ V-256538 ------------"
+photon_audit_logon=$(auditctl -l | grep -E "faillog|lastlog|tallylog")
+photon_audit_logon_output=$(cat << EOF
+-w /var/log/faillog -p wa
+-w /var/log/lastlog -p wa
+-w /var/log/tallylog -p wa
+EOF
+)
+photon_audit_logon=$( echo "$photon_audit_logon" | awk '{$1=$1};1' )
+photon_audit_logon_output=$( echo "$photon_audit_logon_output" | awk '{$1=$1};1' )
+if [ "$photon_audit_logon" = "$photon_audit_logon_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_audit_logon
+fi
+echo " "
+echo "------------ V-256539 ------------"
+photon_audit_insmod=$(auditctl -l | grep "/sbin/insmod")
+photon_audit_insmod_output=$(cat << EOF
+-w /sbin/insmod -p x
+EOF
+)
+photon_audit_insmod=$( echo "$photon_audit_insmod" | awk '{$1=$1};1' )
+photon_audit_insmod_output=$( echo "$photon_audit_insmod_output" | awk '{$1=$1};1' )
+if [ "$photon_audit_insmod" = "$photon_audit_insmod_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_audit_insmod
+fi
+echo " "
+echo "------------ V-256540 ------------"
+photon_audit_accounts=($(auditctl -l | grep -E /etc/security/opasswd | awk '{print $4}'))
+photon_audit_accounts_check=false
+for x in $photon_audit_accounts; do
+    if [[ "$x" != *"w"* ]]; then
+        photon_audit_accounts_check=true
+    fi
+done
+if $photon_audit_accounts_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(auditctl -l | grep -E /etc/security/opasswd)
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256541 ------------"
+photon_pamcrack_module=$(grep pam_cracklib /etc/pam.d/system-password)
+photon_pamcrack_module=$( echo "$photon_pamcrack_module" | awk '{$1=$1};1' )
+if [[ "$photon_pamcrack_module" == "password requisite pam_cracklib.so"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_pamcrack_module
+fi
+echo " "
+echo "------------ V-256542 ------------"
+photon_fail_delay=$(grep FAIL_DELAY /etc/login.defs)
+photon_fail_delay_output=$(cat << EOF
+FAIL_DELAY 4
+EOF
+)
+photon_fail_delay=$( echo "$photon_fail_delay" | awk '{$1=$1};1' )
+photon_fail_delay_output=$( echo "$photon_fail_delay_output" | awk '{$1=$1};1' )
+if [ "$photon_fail_delay" = "$photon_fail_delay_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_fail_delay
+fi
+echo " "
+echo "------------ V-256543 ------------"
+photon_four_second=$(grep pam_faildelay /etc/pam.d/system-auth)
+photon_four_second_output=$(cat << EOF
+auth       optional pam_faildelay.so delay=4000000
+EOF
+)
+photon_four_second=$( echo "$photon_four_second" | awk '{$1=$1};1' )
+photon_four_second_output=$( echo "$photon_four_second_output" | awk '{$1=$1};1' )
+if [ "$photon_four_second" = "$photon_four_second_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_four_second
+fi
+echo " "
+echo "------------ V-256544 ------------"
+photon_audit_flush=$(grep -E "freq|flush" /etc/audit/auditd.conf)
+photon_audit_flush_output=$(cat << EOF
+flush = INCREMENTAL_ASYNC
+freq = 50
+EOF
+)
+photon_audit_flush=$( echo "$photon_audit_flush" | awk '{$1=$1};1' )
+photon_audit_flush_output=$( echo "$photon_audit_flush_output" | awk '{$1=$1};1' )
+if [ "$photon_audit_flush" = "$photon_audit_flush_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_audit_flush
+fi
+echo " "
+echo "------------ V-256545 ------------"
+photon_home_dir=$(grep -i "^create_home" /etc/login.defs)
+photon_home_dir_output=$(cat << EOF
+CREATE_HOME     yes
+EOF
+)
+photon_home_dir=$( echo "$photon_home_dir" | awk '{$1=$1};1' )
+photon_home_dir_output=$( echo "$photon_home_dir_output" | awk '{$1=$1};1' )
+if [ "$photon_home_dir" = "$photon_home_dir_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_home_dir
+fi
+echo " "
+echo "------------ V-256546 ------------"
+photon_disable_debug_shell=$(systemctl status debug-shell.service | grep disabled)
+photon_disable_debug_shell_output=$(cat << EOF
+Loaded: loaded (/lib/systemd/system/debug-shell.service; disabled; vendor preset: disabled)
+EOF
+)
+photon_disable_debug_shell=$( echo "$photon_disable_debug_shell" | awk '{$1=$1};1' )
+photon_disable_debug_shell_output=$( echo "$photon_disable_debug_shell_output" | awk '{$1=$1};1' )
+if [ "$photon_disable_debug_shell" = "$photon_disable_debug_shell_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_disable_debug_shell
+fi
+echo " "
+echo "------------ V-256547 ------------"
+photon_gssapi_auth=$(sshd -T|&grep -i GSSAPIAuthentication)
+photon_gssapi_auth_output=$(cat << EOF
+GSSAPIAuthentication no
+EOF
+)
+photon_gssapi_auth_output_2=$(cat << EOF
+gssapiauthentication no
+EOF
+)
+photon_gssapi_auth=$( echo "$photon_gssapi_auth" | awk '{$1=$1};1' )
+photon_gssapi_auth_output=$( echo "$photon_gssapi_auth_output" | awk '{$1=$1};1' )
+photon_gssapi_auth_output_2=$( echo "$photon_gssapi_auth_output_2" | awk '{$1=$1};1' )
+if [ "$photon_gssapi_auth" = "$photon_gssapi_auth_output" ] || [ "$photon_gssapi_auth" = "$photon_gssapi_auth_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_gssapi_auth
+fi
+echo " "
+echo "------------ V-256548 ------------"
+photon_disable_env_proc=$(sshd -T|&grep -i PermitUserEnvironment)
+photon_disable_env_proc_output=$(cat << EOF
+PermitUserEnvironment no
+EOF
+)
+photon_disable_env_proc_output_2=$(cat << EOF
+permituserenvironment no
+EOF
+)
+photon_disable_env_proc=$( echo "$photon_disable_env_proc" | awk '{$1=$1};1' )
+photon_disable_env_proc_output=$( echo "$photon_disable_env_proc_output" | awk '{$1=$1};1' )
+photon_disable_env_proc_output_2=$( echo "$photon_disable_env_proc_output_2" | awk '{$1=$1};1' )
+if [ "$photon_disable_env_proc" = "$photon_disable_env_proc_output" ] || [ "$photon_disable_env_proc" = "$photon_disable_env_proc_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_disable_env_proc
+fi
+echo " "
+echo "------------ V-256549 ------------"
+photon_disable_xforwarding=$(sshd -T|&grep -i X11Forwarding)
+photon_disable_xforwarding_output=$(cat << EOF
+X11Forwarding no
+EOF
+)
+photon_disable_xforwarding_output_2=$(cat << EOF
+x11forwarding no
+EOF
+)
+photon_disable_xforwarding=$( echo "$photon_disable_xforwarding" | awk '{$1=$1};1' )
+photon_disable_xforwarding_output=$( echo "$photon_disable_xforwarding_output" | awk '{$1=$1};1' )
+photon_disable_xforwarding_output_2=$( echo "$photon_disable_xforwarding_output_2" | awk '{$1=$1};1' )
+if [ "$photon_disable_xforwarding" = "$photon_disable_xforwarding_output" ] || [ "$photon_disable_xforwarding" = "$photon_disable_xforwarding_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_disable_xforwarding
+fi
+echo " "
+echo "------------ V-256550 ------------"
+photon_strict_mode=$(sshd -T|&grep -i StrictModes)
+photon_strict_mode_output=$(cat << EOF
+StrictModes yes
+EOF
+)
+photon_strict_mode_output_2=$(cat << EOF
+strictmodes yes
+EOF
+)
+photon_strict_mode=$( echo "$photon_strict_mode" | awk '{$1=$1};1' )
+photon_strict_mode_output=$( echo "$photon_strict_mode_output" | awk '{$1=$1};1' )
+photon_strict_mode_output_2=$( echo "$photon_strict_mode_output_2" | awk '{$1=$1};1' )
+if [ "$photon_strict_mode" = "$photon_strict_mode_output" ] || [ "$photon_strict_mode" = "$photon_strict_mode_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_strict_mode
+fi
+echo " "
+echo "------------ V-256551 ------------"
+photon_disallow_kerberos=$(sshd -T|&grep -i KerberosAuthentication)
+photon_disallow_kerberos_output=$(cat << EOF
+kerberosauthentication no
+EOF
+)
+photon_disallow_kerberos_output_2=$(cat << EOF
+kerberosauthentication no
+EOF
+)
+photon_disallow_kerberos=$( echo "$photon_disallow_kerberos" | awk '{$1=$1};1' )
+photon_disallow_kerberos_output=$( echo "$photon_disallow_kerberos_output" | awk '{$1=$1};1' )
+photon_disallow_kerberos_output_2=$( echo "$photon_disallow_kerberos_output_2" | awk '{$1=$1};1' )
+if [ "$photon_disallow_kerberos" = "$photon_disallow_kerberos_output" ] || [ "$photon_disallow_kerberos" = "$photon_disallow_kerberos_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_disallow_kerberos
+fi
+echo " "
+echo "------------ V-256552 ------------"
+photon_disallow_empty_password=$(sshd -T|&grep -i PermitEmptyPasswords)
+photon_disallow_empty_password_output=$(cat << EOF
+PermitEmptyPasswords no
+EOF
+)
+photon_disallow_empty_password_output_2=$(cat << EOF
+permitemptypasswords no
+EOF
+)
+photon_disallow_empty_password=$( echo "$photon_disallow_empty_password" | awk '{$1=$1};1' )
+photon_disallow_empty_password_output=$( echo "$photon_disallow_empty_password_output" | awk '{$1=$1};1' )
+photon_disallow_empty_password_output_2=$( echo "$photon_disallow_empty_password_output_2" | awk '{$1=$1};1' )
+if [ "$photon_disallow_empty_password" = "$photon_disallow_empty_password_output" ] || [ "$photon_disallow_empty_password" = "$photon_disallow_empty_password_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_disallow_empty_password
+fi
+echo " "
+echo "------------ V-256553 ------------"
+photon_disallow_compression=$(sshd -T|&grep -i Compression)
+photon_disallow_compression_output=$(cat << EOF
+Compression no
+EOF
+)
+photon_disallow_compression_output_2=$(cat << EOF
+compression no
+EOF
+)
+photon_disallow_compression=$( echo "$photon_disallow_compression" | awk '{$1=$1};1' )
+photon_disallow_compression_output=$( echo "$photon_disallow_compression_output" | awk '{$1=$1};1' )
+photon_disallow_compression_output_2=$( echo "$photon_disallow_compression_output_2" | awk '{$1=$1};1' )
+if [ "$photon_disallow_compression" = "$photon_disallow_compression_output" ] || [ "$photon_disallow_compression" = "$photon_disallow_compression_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_disallow_compression
+fi
+echo " "
+echo "------------ V-256554 ------------"
+photon_last_login=$(sshd -T|&grep -i PrintLastLog)
+photon_last_login_output=$(cat << EOF
+PrintLastLog yes
+EOF
+)
+photon_last_login_output_2=$(cat << EOF
+printlastlog yes
+EOF
+)
+photon_last_login=$( echo "$photon_last_login" | awk '{$1=$1};1' )
+photon_last_login_output=$( echo "$photon_last_login_output" | awk '{$1=$1};1' )
+photon_last_login_output_2=$( echo "$photon_last_login_output_2" | awk '{$1=$1};1' )
+if [ "$photon_last_login" = "$photon_last_login_output" ] || [ "$photon_last_login" = "$photon_last_login_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_last_login
+fi
+echo " "
+echo "------------ V-256555 ------------"
+photon_ignore_trusted_host=$(sshd -T|&grep -i IgnoreRhosts)
+photon_ignore_trusted_host_output=$(cat << EOF
+IgnoreRhosts yes
+EOF
+)
+photon_ignore_trusted_host_output_2=$(cat << EOF
+ignorerhosts yes
+EOF
+)
+photon_ignore_trusted_host=$( echo "$photon_ignore_trusted_host" | awk '{$1=$1};1' )
+photon_ignore_trusted_host_output=$( echo "$photon_ignore_trusted_host_output" | awk '{$1=$1};1' )
+photon_ignore_trusted_host_output_2=$( echo "$photon_ignore_trusted_host_output_2" | awk '{$1=$1};1' )
+if [ "$photon_ignore_trusted_host" = "$photon_ignore_trusted_host_output" ] || [ "$photon_ignore_trusted_host" = "$photon_ignore_trusted_host_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_ignore_trusted_host
+fi
+echo " "
+echo "------------ V-256556 ------------"
+photon_ignore_user_host=$(sshd -T|&grep -i IgnoreUserKnownHosts)
+photon_ignore_user_host_output=$(cat << EOF
+IgnoreUserKnownHosts yes
+EOF
+)
+photon_ignore_user_host_output_2=$(cat << EOF
+ignoreuserknownhosts yes
+EOF
+)
+photon_ignore_user_host=$( echo "$photon_ignore_user_host" | awk '{$1=$1};1' )
+photon_ignore_user_host_output=$( echo "$photon_ignore_user_host_output" | awk '{$1=$1};1' )
+photon_ignore_user_host_output_2=$( echo "$photon_ignore_user_host_output_2" | awk '{$1=$1};1' )
+if [ "$photon_ignore_user_host" = "$photon_ignore_user_host_output" ] || [ "$photon_ignore_user_host" = "$photon_ignore_user_host_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_ignore_user_host
+fi
+echo " "
+echo "------------ V-256557 ------------"
+photon_max_tries=$(sshd -T|&grep -i MaxAuthTries)
+photon_max_tries_output=$(cat << EOF
+MaxAuthTries 6
+EOF
+)
+photon_max_tries_output_2=$(cat << EOF
+maxAuthtries 6
+EOF
+)
+photon_max_tries=$( echo "$photon_max_tries" | awk '{$1=$1};1' )
+photon_max_tries_output=$( echo "$photon_max_tries_output" | awk '{$1=$1};1' )
+photon_max_tries_output_2=$( echo "$photon_max_tries_output_2" | awk '{$1=$1};1' )
+if [ "$photon_max_tries" = "$photon_max_tries_output" ] || [ "$photon_max_tries" = "$photon_max_tries_output_2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_max_tries
+fi
+echo " "
+echo "------------ V-256558 ------------"
+photon_disable_ctrladel=$(systemctl show ctrl-alt-del.target | grep -i activestate)
+photon_disable_ctrladel_output=$(cat << EOF
+ActiveState=inactive
+EOF
+)
+photon_disable_ctrladel=$( echo "$photon_disable_ctrladel" | awk '{$1=$1};1' )
+photon_disable_ctrladel_output=$( echo "$photon_disable_ctrladel_output" | awk '{$1=$1};1' )
+if [ "$photon_disable_ctrladel" = "$photon_disable_ctrladel_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_disable_ctrladel
+fi
+echo " "
+echo "------------ V-256559 ------------"
+photon_default_scripts=$(stat -c "%n permissions are %a and owned by %U:%G" /etc/skel/.[^.]*)
+photon_default_scripts_output=$(cat << EOF
+/etc/skel/.bash_logout permissions are 750 and owned by root:root
+/etc/skel/.bash_profile permissions are 644 and owned by root:root
+/etc/skel/.bashrc permissions are 750 and owned by root:root
+EOF
+)
+photon_default_scripts=$( echo "$photon_default_scripts" | awk '{$1=$1};1' )
+photon_default_scripts_output=$( echo "$photon_default_scripts_output" | awk '{$1=$1};1' )
+if [ "$photon_default_scripts" = "$photon_default_scripts_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_default_scripts
+fi
+echo " "
+echo "------------ V-256560 ------------"
+photon_root_path=$(stat -c "%n permissions are %a and owned by %U:%G" /root)
+photon_root_path_output=$(cat << EOF
+/root permissions are 700 and owned by root:root
+EOF
+)
+photon_root_path=$( echo "$photon_root_path" | awk '{$1=$1};1' )
+photon_root_path_output=$( echo "$photon_root_path_output" | awk '{$1=$1};1' )
+if [ "$photon_root_path" = "$photon_root_path_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_root_path
+fi
+echo " "
+echo "------------ V-256561 ------------"
+photon_init_scripts=$(find /etc/bash.bashrc /etc/profile /etc/profile.d/ -xdev -type f -a '(' -perm -002 -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+photon_init_scripts=$( echo "$photon_init_scripts" | awk '{$1=$1};1' )
+if [ -z "$photon_init_scripts" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_init_scripts
+fi
+echo " "
+echo "------------ V-256562 ------------"
+photon_startup_scripts=$(find /etc/rc.d/* -xdev -type f -a '(' -perm -002 -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+photon_startup_scripts=$( echo "$photon_startup_scripts" | awk '{$1=$1};1' )
+if [ -z "$photon_startup_scripts" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_startup_scripts
+fi
+echo " "
+echo "------------ V-256563 ------------"
+photon_valid_owner_group=$(find / -fstype ext4 -nouser -o -nogroup -exec ls -ld {} \; 2>/dev/null)
+photon_valid_owner_group=$( echo "$photon_valid_owner_group" | awk '{$1=$1};1' )
+if [ -z "$photon_valid_owner_group" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_valid_owner_group
 fi
 echo " "

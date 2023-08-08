@@ -2,7 +2,7 @@
 
 #****************************************************************
 #*************Written By Mitchell Gibson USACPB CRIA*************
-#*************Last Updated Jul 27, 2023 v1.0*********************
+#*************Last Updated Aug 08, 2023 v1.0*********************
 #****************************************************************
 
 clear
@@ -2152,7 +2152,7 @@ photon_openssh_version=$(rpm -qa | grep openssh | grep -v server | grep -v clien
 photon_required_version="7.4"
 version_compare "$photon_openssh_version" "$photon_required_version"
 photon_comparison_result=$?
-if [[ $photon_comparison_result -eq 1 ]]; then
+if (( $photon_comparison_result -eq 1 )); then
     echo -e "\e[31mOpen\e[0m"
     echo rpm -qa|grep openssh
 else
@@ -3184,4 +3184,816 @@ else
     echo -e "\e[31mOpen\e[0m"
     echo $photon_valid_owner_group
 fi
+echo " "
+echo "------------ V-256564 ------------"
+photon_cron_allow=$(stat -c "%n permissions are %a and owned by %U:%G" /etc/cron.allow)
+photon_cron_allow_output=$(cat << EOF
+/etc/cron.allow permissions are 600 and owned by root:root
+EOF
+)
+photon_cron_allow=$( echo "$photon_cron_allow" | awk '{$1=$1};1' )
+photon_cron_allow_output=$( echo "$photon_cron_allow_output" | awk '{$1=$1};1' )
+if [ "$photon_cron_allow" = "$photon_cron_allow_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_cron_allow
+fi
+echo " "
+echo "------------ V-256565 ------------"
+photon_cron_jobs=$(find /etc/cron.d/ /etc/cron.daily/ /etc/cron.hourly/ /etc/cron.monthly/ /etc/cron.weekly/ -xdev -type f -a '(' -perm -022 -o -not -user root ')' -exec ls -ld {} \; 2>/dev/null)
+photon_cron_jobs=$( echo "$photon_cron_jobs" | awk '{$1=$1};1' )
+if [ -z "$photon_cron_jobs" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_cron_jobs
+fi
+echo " "
+echo "------------ V-256566 ------------"
+photon_cron_paths=$(stat -c "%n permissions are %a and owned by %U:%G" /etc/cron.d /etc/cron.daily /etc/cron.hourly /etc/cron.monthly /etc/cron.weekly)
+photon_cron_paths_output=$(cat << EOF
+/etc/cron.d permissions are 755 and owned by root:root
+/etc/cron.daily permissions are 755 and owned by root:root
+/etc/cron.hourly permissions are 755 and owned by root:root
+/etc/cron.monthly permissions are 755 and owned by root:root
+/etc/cron.weekly permissions are 755 and owned by root:root
+EOF
+)
+photon_cron_paths=$( echo "$photon_cron_paths" | awk '{$1=$1};1' )
+photon_cron_paths_output=$( echo "$photon_cron_paths_output" | awk '{$1=$1};1' )
+if [ "$photon_cron_paths" = "$photon_cron_paths_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_cron_paths
+fi
+echo " "
+echo "------------ V-256567 ------------"
+photon_ip_routed_packets=($(/sbin/sysctl -a --pattern "net.ipv[4|6].conf.(all|default|eth.*).accept_source_route" | awk '{print $3}'))
+photon_ip_routed_packets_check=false
+for q in $photon_ip_routed_packets; do
+    if [[ "$q" != 0 ]]; then
+        photon_ip_routed_packets_check=true
+    fi
+done
+if $photon_ip_routed_packets_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(/sbin/sysctl -a --pattern "net.ipv[4|6].conf.(all|default|eth.*).accept_source_route")
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256568 ------------"
+photon_icmp=$(/sbin/sysctl -a --pattern ignore_broadcasts)
+photon_icmp_output=$(cat << EOF
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+EOF
+)
+photon_icmp=$( echo "$photon_icmp" | awk '{$1=$1};1' )
+photon_icmp_output=$( echo "$photon_icmp_output" | awk '{$1=$1};1' )
+if [ "$photon_icmp" = "$photon_icmp_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_icmp
+fi
+echo " "
+echo "------------ V-256569 ------------"
+photon_ip_accepted=($(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*).accept_redirects" | awk '{print $3}'))
+photon_ip_accepted_check=false
+for z in $photon_ip_accepted; do
+    if [[ "$z" != 0 ]]; then
+        photon_ip_accepted_check=true
+    fi
+done
+if $photon_ip_accepted_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*).accept_redirects")
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256570 ------------"
+photon_ip_secure=($(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*).secure_redirects" | awk '{print $3}'))
+photon_ip_secure_check=false
+for y in $photon_ip_secure; do
+    if [[ "$y" != 0 ]]; then
+        photon_ip_secure_check=true
+    fi
+done
+if $photon_ip_secure_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*).secure_redirects")
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256571 ------------"
+photon_send_icmp=($(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*).send_redirects" | awk '{print $3}'))
+photon_send_icmp_check=false
+for p in $photon_send_icmp; do
+    if [[ "$p" != 0 ]]; then
+        photon_send_icmp_check=true
+    fi
+done
+if $photon_send_icmp_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*).send_redirects")
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256572 ------------"
+photon_impossible_ip=($(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*).log_martians" | awk '{print $3}'))
+photon_impossible_ip_check=false
+for aa in $photon_impossible_ip; do
+    if [[ "$aa" != 1 ]]; then
+        photon_impossible_ip_check=true
+    fi
+done
+if $photon_impossible_ip_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*).log_martians")
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256573 ------------"
+photon_reverse_path=($(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*)\.rp_filter" | awk '{print $3}'))
+photon_reverse_path_check=false
+for ab in $photon_reverse_path; do
+    if [[ "$ab" != 1 ]]; then
+        photon_reverse_path_check=true
+    fi
+done
+if $photon_reverse_path_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default|eth.*)\.rp_filter")
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256574 ------------"
+photon_multicast_forwarding=($(/sbin/sysctl -a --pattern "net.ipv[4|6].conf.(all|default|eth.*).mc_forwarding" | awk '{print $3}'))
+photon_multicast_forwarding_check=false
+for ac in $photon_multicast_forwarding; do
+    if [[ "$ac" != 0 ]]; then
+        photon_multicast_forwarding_check=true
+    fi
+done
+if $photon_multicast_forwarding_check; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $(/sbin/sysctl -a --pattern "net.ipv[4|6].conf.(all|default|eth.*).mc_forwarding")
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256575 ------------"
+photon_packet_forwarding=$(/sbin/sysctl -a --pattern "net.ipv4.ip_forward$")
+photon_packet_forwarding_output=$(cat << EOF
+net.ipv4.ip_forward = 0
+EOF
+)
+photon_packet_forwarding=$( echo "$photon_packet_forwarding" | awk '{$1=$1};1' )
+photon_packet_forwarding_output=$( echo "$photon_packet_forwarding_output" | awk '{$1=$1};1' )
+if [ "$photon_packet_forwarding" = "$photon_packet_forwarding_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_packet_forwarding
+fi
+echo " "
+echo "------------ V-256576 ------------"
+photon_tcp_timestamp=$(/sbin/sysctl -a --pattern "net.ipv4.tcp_timestamps$")
+photon_tcp_timestamp_output=$(cat << EOF
+net.ipv4.tcp_timestamps = 1
+EOF
+)
+photon_tcp_timestamp=$( echo "$photon_tcp_timestamp" | awk '{$1=$1};1' )
+photon_tcp_timestamp_output=$( echo "$photon_tcp_timestamp_output" | awk '{$1=$1};1' )
+if [ "$photon_tcp_timestamp" = "$photon_tcp_timestamp_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_tcp_timestamp
+fi
+echo " "
+echo "------------ V-256577 ------------"
+photon_ssh_pub_key=$(stat -c "%n permissions are %a and owned by %U:%G" /etc/ssh/*key.pub)
+photon_ssh_pub_key_output=$(cat << EOF
+/etc/ssh/ssh_host_ecdsa_key.pub permissions are 644 and owned by root:root
+/etc/ssh/ssh_host_ed25519_key.pub permissions are 644 and owned by root:root
+/etc/ssh/ssh_host_rsa_key.pub permissions are 644 and owned by root:root
+EOF
+)
+photon_ssh_pub_key=$( echo "$photon_ssh_pub_key" | awk '{$1=$1};1' )
+photon_ssh_pub_key_output=$( echo "$photon_ssh_pub_key_output" | awk '{$1=$1};1' )
+if [ "$photon_ssh_pub_key" = "$photon_ssh_pub_key_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_ssh_pub_key
+fi
+echo " "
+echo "------------ V-256578 ------------"
+photon_ssh_private_key=$(stat -c "%n permissions are %a and owned by %U:%G" /etc/ssh/*key)
+photon_ssh_private_key_output=$(cat << EOF
+/etc/ssh/ssh_host_ecdsa_key permissions are 600 and owned by root:root
+/etc/ssh/ssh_host_ed25519_key permissions are 600 and owned by root:root
+/etc/ssh/ssh_host_rsa_key permissions are 600 and owned by root:root
+EOF
+)
+photon_ssh_private_key=$( echo "$photon_ssh_private_key" | awk '{$1=$1};1' )
+photon_ssh_private_key_output=$( echo "$photon_ssh_private_key_output" | awk '{$1=$1};1' )
+if [ "$photon_ssh_private_key" = "$photon_ssh_private_key_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_ssh_private_key
+fi
+echo " "
+echo "------------ V-256579 ------------"
+photon_ssh_private_key=$(grep pam_cracklib /etc/pam.d/system-password|grep "enforce_for_root")
+photon_ssh_private_key=$( echo "$photon_ssh_private_key" | awk '{$1=$1};1' )
+if [[ "$photon_ssh_private_key" == *"enforce_for_root" ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_ssh_private_key
+fi
+echo " "
+echo "------------ V-256580 ------------"
+photon_boot_config=$(find /boot/*.cfg -xdev -type f -a '(' -perm -002 -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+photon_boot_config=$( echo "$photon_boot_config" | awk '{$1=$1};1' )
+if [ -z "$photon_boot_config" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_boot_config
+fi
+echo " "
+echo "------------ V-256581 ------------"
+photon_sshd_config=$(stat -c "%n permissions are %a and owned by %U:%G" /etc/ssh/sshd_config)
+photon_sshd_config_output=$(cat << EOF
+/etc/ssh/sshd_config permissions are 600 and owned by root:root
+EOF
+)
+photon_sshd_config=$( echo "$photon_sshd_config" | awk '{$1=$1};1' )
+photon_sshd_config_output=$( echo "$photon_sshd_config_output" | awk '{$1=$1};1' )
+if [ "$photon_sshd_config" = "$photon_sshd_config_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_sshd_config
+fi
+echo " "
+echo "------------ V-256582 ------------"
+photon_sysctl_files=$(find /etc/sysctl.conf /etc/sysctl.d/* -xdev -type f -a '(' -perm -002 -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+photon_sysctl_files=$( echo "$photon_sysctl_files" | awk '{$1=$1};1' )
+if [ -z "$photon_sysctl_files" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_sysctl_files
+fi
+echo " "
+echo "------------ V-256583 ------------"
+photon_set_umask=$(grep ^UMASK /etc/login.defs 2>/dev/null)
+photon_set_umask_output=$(cat << EOF
+UMASK 077
+EOF
+)
+photon_set_umask=$( echo "$photon_set_umask" | awk '{$1=$1};1' )
+photon_set_umask_output=$( echo "$photon_set_umask_output" | awk '{$1=$1};1' )
+if [ "$photon_set_umask" = "$photon_set_umask_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_set_umask
+fi
+echo " "
+echo "------------ V-256584 ------------"
+photon_sshd_hostbasedauth=$(sshd -T|&grep -i HostbasedAuthentication 2>/dev/null)
+photon_sshd_hostbasedauth_output=$(cat << EOF
+hostbasedauthentication no
+EOF
+)
+photon_sshd_hostbasedauth=$( echo "$photon_sshd_hostbasedauth" | awk '{$1=$1};1' )
+photon_sshd_hostbasedauth_output=$( echo "$photon_sshd_hostbasedauth_output" | awk '{$1=$1};1' )
+if [ "$photon_sshd_hostbasedauth" = "$photon_sshd_hostbasedauth_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_sshd_hostbasedauth
+fi
+echo " "
+echo "------------ V-256585 ------------"
+photon_encrypted_passwords=$( grep password /etc/pam.d/system-password|grep "sha512")
+photon_encrypted_passwords=$( echo "$photon_encrypted_passwords" | awk '{$1=$1};1' )
+if [[ "$photon_encrypted_passwords" == *"sha512"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_encrypted_passwords
+fi
+echo " "
+echo "------------ V-256586 ------------"
+photon_old_passwords=$(ls -al /etc/security/opasswd 2>/dev/null)
+photon_old_passwords=$( echo "$photon_old_passwords" | awk '{$1=$1};1' )
+if [[ "$photon_old_passwords" == *"/etc/security/opasswd" ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_old_passwords
+fi
+echo " "
+echo "------------ V-256587 ------------"
+photon_sshd_tcp_forwarding=$(sshd -T|&grep -i AllowTcpForwarding)
+photon_sshd_tcp_forwarding_output=$(cat << EOF
+allowtcpforwarding no
+EOF
+)
+photon_sshd_tcp_forwarding=$( echo "$photon_sshd_tcp_forwarding" | awk '{$1=$1};1' )
+photon_sshd_tcp_forwarding_output=$( echo "$photon_sshd_tcp_forwarding_output" | awk '{$1=$1};1' )
+if [ "$photon_sshd_tcp_forwarding" = "$photon_sshd_tcp_forwarding_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_sshd_tcp_forwarding
+fi
+echo " "
+echo "------------ V-256588 ------------"
+photon_sshd_login_grace=$(sshd -T|&grep -i LoginGraceTime)
+photon_sshd_login_grace_output=$(cat << EOF
+logingracetime 30
+EOF
+)
+photon_sshd_login_grace=$( echo "$photon_sshd_login_grace" | awk '{$1=$1};1' )
+photon_sshd_login_grace_output=$( echo "$photon_sshd_login_grace_output" | awk '{$1=$1};1' )
+if [ "$photon_sshd_login_grace" = "$photon_sshd_login_grace_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_sshd_login_grace
+fi
+echo " "
+echo "------------ V-256589 ------------"
+photon_crypto_fips=$(cat /proc/sys/crypto/fips_enabled 2>/dev/null)
+photon_crypto_fips=$( echo "$photon_crypto_fips" | awk '{$1=$1};1' )
+if (( "$photon_crypto_fips" == 1 )); then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_crypto_fips
+fi
+echo " "
+echo "------------ V-256590 ------------"
+photon_fallback_dns=$(resolvectl status | grep 'Fallback DNS')
+photon_fallback_dns=$( echo "$photon_fallback_dns" | awk '{$1=$1};1' )
+if [ -z "$photon_fallback_dns" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_fallback_dns
+fi
+echo " "
+echo " "
+echo -----------------------------------------------------------------------------------------------------------
+echo ----------VMware vSphere 7.0 vCenter Appliance PostGreSQL Security Technical Implementation Guide----------
+echo -----------------------------------------------------------------------------------------------------------
+echo " "
+echo "------------ V-256591 ------------"
+postgres_connections=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW max_connections;" 2>/dev/null)
+postgres_connections=$( echo "$postgres_connections" | awk '{$1=$1};1' )
+if [ -z "$postgres_connections" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif (( "$postgres_connections" >= 100 )) && (( "$postgres_connections" <= 1000 )); then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_connections
+fi
+echo " "
+echo "------------ V-256592 ------------"
+postgres_log_files=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW log_line_prefix;" 2>/dev/null)
+postgres_log_files_output=$(cat << EOF
+%m %c %x %d %u %r %p %l
+EOF
+)
+postgres_log_files=$( echo "$postgres_log_files" | awk '{$1=$1};1' )
+postgres_log_files_output=$( echo "$postgres_log_files_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_log_files" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_log_files" = "$postgres_log_files_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_log_files
+fi
+echo " "
+echo "------------ V-256593 ------------"
+photon_unauthorized_users=$(find /storage/db/vpostgres/*conf* -xdev -type f -a '(' -not -perm 600 -o -not -user vpostgres -o -not -group vpgmongrp ')' -exec ls -ld {} \; 2>/dev/null)
+photon_unauthorized_users=$( echo "$photon_unauthorized_users" | awk '{$1=$1};1' )
+if [ -z "$photon_unauthorized_users" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_unauthorized_users
+fi
+echo " "
+echo "------------ V-256594 ------------"
+postgres_overwrite_old=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW log_truncate_on_rotation;" 2>/dev/null)
+postgres_overwrite_old_output=$(cat << EOF
+on
+EOF
+)
+postgres_overwrite_old=$( echo "$postgres_overwrite_old" | awk '{$1=$1};1' )
+postgres_overwrite_old_output=$( echo "$postgres_overwrite_old_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_overwrite_old" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_overwrite_old" = "$postgres_overwrite_old_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_overwrite_old
+fi
+echo " "
+echo "------------ V-256595 ------------"
+photon_unauthorized_users=$(find /var/log/vmware/vpostgres/* -xdev -type f -a '(' -not -perm 600 -o -not -user vpostgres -o -not -group vpgmongrp ')' -exec ls -ld {} \; 2>/dev/null)
+photon_unauthorized_users=$( echo "$photon_unauthorized_users" | awk '{$1=$1};1' )
+if [ -z "$photon_unauthorized_users" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_unauthorized_users
+echo " "
+fi
+echo "------------ V-256596 ------------"
+photon_vc_tables=$(/opt/vmware/vpostgres/current/bin/psql -d VCDB -U postgres -t -A -c "\dt;" 2>/dev/null| grep -v 'table|vc' 2>/dev/null)
+photon_vc_tables=$( echo "$photon_vc_tables" | awk '{$1=$1};1' )
+if [ -z "$photon_vc_tables" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $photon_vc_tables
+fi
+echo " "
+echo "------------ V-256597 ------------"
+postgres_priv_authorized=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -c "\du;"|grep "Create")
+postgres_priv_authorized_output=$(cat << EOF
+postgres   | Superuser, Create role, Create DB, Replication, Bypass RLS | {}
+ vc         | Create DB                                                  | {}
+ vlcmuser   | Create DB                                                  | {}
+EOF
+)
+postgres_priv_authorized=$( echo "$postgres_priv_authorized" | awk '{$1=$1};1' )
+postgres_priv_authorized_output=$( echo "$postgres_priv_authorized_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_priv_authorized" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_priv_authorized" = "$postgres_priv_authorized_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_priv_authorized
+fi
+echo " "
+echo "------------ V-256598 ------------"
+postgres_correct_port=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW port;" 2>/dev/null)
+postgres_correct_port_output=$(cat << EOF
+5432
+EOF
+)
+postgres_correct_port=$( echo "$postgres_correct_port" | awk '{$1=$1};1' )
+postgres_correct_port_output=$( echo "$postgres_correct_port_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_correct_port" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_correct_port" = "$postgres_correct_port_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_correct_port
+fi
+echo " "
+echo "------------ V-256599 ------------"
+postgres_connection_auth=$(grep -v "^#" /storage/db/vpostgres/pg_hba.conf|grep "trust" 2>/dev/null)
+postgres_connection_auth=$( echo "$postgres_connection_auth" | awk '{$1=$1};1' )
+if [ -z "$postgres_connection_auth" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_connection_auth
+fi
+echo " "
+echo "------------ V-256600 ------------"
+postgres_md5_auth=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW password_encryption;" 2>/dev/null)
+postgres_md5_auth_output=$(cat << EOF
+md5
+EOF
+)
+postgres_md5_auth=$( echo "$postgres_md5_auth" | awk '{$1=$1};1' )
+postgres_md5_auth_output=$( echo "$postgres_md5_auth_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_md5_auth" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_md5_auth" = "$postgres_md5_auth_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_md5_auth
+fi
+echo " "
+echo "------------ V-256601 ------------"
+postgres_tls=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW ssl;" 2>/dev/null)
+postgres_tls_output=$(cat << EOF
+on
+EOF
+)
+postgres_tls=$( echo "$postgres_tls" | awk '{$1=$1};1' )
+postgres_tls_output=$( echo "$postgres_tls" | awk '{$1=$1};1' )
+if [ -z "$postgres_tls" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_tls" = "$postgres_tls_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_tls
+fi
+echo " "
+echo "------------ V-256602 ------------"
+postgres_pub_ssh=$(stat -c "%a:%U:%G" /storage/db/vpostgres_ssl/server.key 2>/dev/null)
+postgres_pub_ssh_output=$(cat << EOF
+600:vpostgres:vpgmongrp
+EOF
+)
+postgres_pub_ssh=$( echo "$postgres_pub_ssh" | awk '{$1=$1};1' )
+postgres_pub_ssh_output=$( echo "$postgres_pub_ssh_output" | awk '{$1=$1};1' )
+if [ "$postgres_pub_ssh" = "$postgres_pub_ssh_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_pub_ssh
+fi
+echo " "
+echo "------------ V-256603 ------------"
+postgres_fips_tls=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW ssl_ciphers;" 2>/dev/null)
+postgres_fips_tls_output=$(cat << EOF
+!aNULL:kECDH+AES:ECDH+AES:RSA+AES:@STRENGTH
+EOF
+)
+postgres_fips_tls=$( echo "$postgres_fips_tls" | awk '{$1=$1};1' )
+postgres_fips_tls_output=$( echo "$postgres_fips_tls_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_fips_tls" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_fips_tls" = "$postgres_fips_tls_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_fips_tls
+fi
+echo " "
+echo "------------ V-256604 ------------"
+postgres_log_2_disk=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SELECT name,setting FROM pg_settings WHERE name IN ('fsync','full_page_writes','synchronous_commit');" 2>/dev/null)
+postgres_log_2_disk_output=$(cat << EOF
+fsync|on
+full_page_writes|on
+synchronous_commit|on
+EOF
+)
+postgres_log_2_disk=$( echo "$postgres_log_2_disk" | awk '{$1=$1};1' )
+postgres_log_2_disk_output=$( echo "$postgres_log_2_disk_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_log_2_disk" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_log_2_disk" = "$postgres_log_2_disk_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_log_2_disk
+fi
+echo " "
+echo "------------ V-256605 ------------"
+postgres_log_2_disk=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -c "\dp .*.;" 2>/dev/null|grep -E "information_schema|pg_catalog"|awk -F '|' '{print $4}'|awk -F '/' '{print $1}'|grep -v "=r" | grep -v "^[[:space:]]*$" | grep -v "postgres" )
+if [ -z "$postgres_log_2_disk" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_log_2_disk
+fi
+echo " "
+echo "------------ V-256606 ------------"
+postgres_no_error_messages=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW client_min_messages;" 2>/dev/null)
+postgres_no_error_messages_output=$(cat << EOF
+notice
+EOF
+)
+postgres_no_error_messages=$( echo "$postgres_no_error_messages" | awk '{$1=$1};1' )
+postgres_no_error_messages_output=$( echo "$postgres_no_error_messages_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_no_error_messages" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_no_error_messages" = "$postgres_no_error_messages_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_no_error_messages
+fi
+echo " "
+echo "------------ V-256607 ------------"
+postgres_log_collection=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW logging_collector;" 2>/dev/null)
+postgres_log_collection_output=$(cat << EOF
+on
+EOF
+)
+postgres_log_collection=$( echo "$postgres_log_collection" | awk '{$1=$1};1' )
+postgres_log_collection_output=$( echo "$postgres_log_collection_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_log_collection" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_log_collection" = "$postgres_log_collection_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_log_collection
+fi
+echo " "
+echo "------------ V-256608 ------------"
+postgres_log_stderr=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW log_destination;" 2>/dev/null)
+postgres_log_stderr_output=$(cat << EOF
+stderr
+EOF
+)
+postgres_log_stderr=$( echo "$postgres_log_stderr" | awk '{$1=$1};1' )
+postgres_log_stderr_output=$( echo "$postgres_log_stderr_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_log_stderr" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_log_stderr" = "$postgres_log_stderr_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_log_stderr
+fi
+echo " "
+echo "------------ V-256609 ------------"
+postgres_rsyslog=$(rpm -V VMware-Postgres-cis-visl-scripts|grep -E "vmware-services-vmware-vpostgres.conf|vmware-services-vmware-postgres-archiver.conf" | grep "^..5......" )
+postgres_rsyslog=$( echo "$postgres_rsyslog" | awk '{$1=$1};1' )
+if [ -z "$postgres_rsyslog" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_rsyslog
+fi
+echo " "
+echo "------------ V-256610 ------------"
+postgres_log_utc=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW log_timezone;" 2>/dev/null)
+postgres_log_utc_output=$(cat << EOF
+Etc/UTC
+EOF
+)
+postgres_log_utc=$( echo "$postgres_log_utc" | awk '{$1=$1};1' )
+postgres_log_utc_output=$( echo "$postgres_log_utc_output" | awk '{$1=$1};1' )
+if [ -z "$postgres_log_utc" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
+elif [ "$postgres_log_utc" = "$postgres_log_utc_output" ] || [[ "$postgres_log_utc" == "UTC" ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $postgres_log_utc
+fi
+echo " "
+echo " "
+echo -----------------------------------------------------------------------------------------------------------
+echo ----------VMware vSphere 7.0 vCenter Appliance RhttpProxy Security Technical Implementation Guide----------
+echo -----------------------------------------------------------------------------------------------------------
+echo " "
+echo "------------ V-256737 ------------"
+rhttpproxy_disconnected_clients=$(xmllint --xpath '/config/envoy/L4Filter/tcpKeepAliveTimeSec/text()' /etc/vmware-rhttpproxy/config.xml 2>/dev/null)
+rhttpproxy_disconnected_clients_output=$(cat << EOF
+180
+EOF
+)
+rhttpproxy_disconnected_clients=$( echo "$rhttpproxy_disconnected_clients" | awk '{$1=$1};1' )
+rhttpproxy_disconnected_clients_output=$( echo "$rhttpproxy_disconnected_clients_output" | awk '{$1=$1};1' )
+if [ "$rhttpproxy_disconnected_clients" = "$rhttpproxy_disconnected_clients_output" ] || [ -z "$rhttpproxy_disconnected_clients"]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $rhttpproxy_disconnected_clients
+fi
+echo " "
+echo "------------ V-256738 ------------"
+rhttpproxy_established_connections=$(xmllint --xpath '/config/envoy/L4Filter/tcpKeepAliveTimeSec/text()' /etc/vmware-rhttpproxy/config.xml 2>/dev/null)
+rhttpproxy_established_connections_output=$(cat << EOF
+2048
+EOF
+)
+rhttpproxy_established_connections=$( echo "$rhttpproxy_established_connections" | awk '{$1=$1};1' )
+rhttpproxy_established_connections_output=$( echo "$rhttpproxy_established_connections_output" | awk '{$1=$1};1' )
+if [ "$rhttpproxy_established_connections" = "$rhttpproxy_established_connections_output" ] || [ -z "$rhttpproxy_established_connections"]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $rhttpproxy_established_connections
+fi
+echo " "
+echo "------------ V-256739 ------------"
+rhttpproxy_fips_mode=$(xmllint --xpath '/config/vmacore/ssl/fips' /etc/vmware-rhttpproxy/config.xml 2>/dev/null)
+rhttpproxy_fips_mode_output=$(cat << EOF
+<fips>true</fips>
+EOF
+)
+rhttpproxy_fips_mode=$( echo "$rhttpproxy_fips_mode" | awk '{$1=$1};1' )
+rhttpproxy_fips_mode_output=$( echo "$rhttpproxy_fips_mode_output" | awk '{$1=$1};1' )
+if [ "$rhttpproxy_fips_mode" = "$rhttpproxy_fips_mode_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $rhttpproxy_fips_mode
+fi
+echo " "
+echo "------------ V-256740 ------------"
+rhttpproxy_tls_connections=$(xmllint --xpath '/config/vmacore/ssl/protocols' /etc/vmware-rhttpproxy/config.xml 2>/dev/null)
+rhttpproxy_tls_connections_output=$(cat << EOF
+<protocols>tls1.2</protocols>
+EOF
+)
+rhttpproxy_tls_connections=$( echo "$rhttpproxy_tls_connections" | awk '{$1=$1};1' )
+rhttpproxy_tls_connections_output=$( echo "$rhttpproxy_tls_connections_output" | awk '{$1=$1};1' )
+if [ "$rhttpproxy_tls_connections" = "$rhttpproxy_tls_connections_output" ] || [ -z "$rhttpproxy_tls_connections"]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $rhttpproxy_tls_connections
+fi
+echo " "
+echo "------------ V-256741 ------------"
+rhttpproxy_envoy_pkey=$(stat -c "%n permissions are %a, is owned by %U and group owned by %G" /etc/vmware-rhttpproxy/ssl/rui.key 2>/dev/null)
+rhttpproxy_envoy_pkey_output=$(cat << EOF
+/etc/vmware-rhttpproxy/ssl/rui.key permissions are 600, is owned by root and group owned by root
+EOF
+)
+rhttpproxy_envoy_pkey=$( echo "$rhttpproxy_envoy_pkey" | awk '{$1=$1};1' )
+rhttpproxy_envoy_pkey_output=$( echo "$rhttpproxy_envoy_pkey_output" | awk '{$1=$1};1' )
+if [ "$rhttpproxy_envoy_pkey" = "$rhttpproxy_envoy_pkey_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $rhttpproxy_envoy_pkey
+fi
+echo " "
+echo "------------ V-256742 ------------"
+rhttpproxy_https=$(xmllint --xpath '/config/ssl' /etc/vmware-rhttpproxy/config.xml 2>/dev/null)
+rhttpproxy_https_output=$(cat << EOF
+<ssl> 
+    <!-- The server private key file --> 
+    <privateKey>/etc/vmware-rhttpproxy/ssl/rui.key</privateKey> 
+    <!-- The server side certificate file --> 
+    <certificate>/etc/vmware-rhttpproxy/ssl/rui.crt</certificate> 
+    <!-- vecs server name. Currently vecs runs on all node types. --> 
+    <vecsServerName>localhost</vecsServerName> 
+  </ssl>
+EOF
+)
+rhttpproxy_https=$( echo "$rhttpproxy_https" | awk '{$1=$1};1' )
+rhttpproxy_https_output=$( echo "$rhttpproxy_https_output" | awk '{$1=$1};1' )
+if [ "$rhttpproxy_https" = "$rhttpproxy_https_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $rhttpproxy_https
+fi
+echo " "
+echo "------------ V-256743 ------------"
+rhttpproxy_syslog=$(rpm -V VMware-visl-integration|grep vmware-services-rhttpproxy.conf|grep "^..5......" 2>/dev/null)
+rhttpproxy_syslog=$( echo "$rhttpproxy_syslog" | awk '{$1=$1};1' )
+if [ -z "$rhttpproxy_syslog" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $rhttpproxy_syslog
+fi
+echo " "
+echo "------------ V-256744 ------------"
+rhttpproxy_central=$(rpm -V VMware-visl-integration|grep vmware-services-envoy.conf|grep "^..5......" 2>/dev/null)
+rhttpproxy_central=$( echo "$rhttpproxy_central" | awk '{$1=$1};1' )
+if [ -z "$rhttpproxy_central" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $rhttpproxy_central
+fi
+echo " "
+echo " "
+echo ----------------------------------------------------------------------------------------------------
+echo ----------VMware vSphere 7.0 vCenter Appliance STS Security Technical Implementation Guide----------
+echo ----------------------------------------------------------------------------------------------------
 echo " "

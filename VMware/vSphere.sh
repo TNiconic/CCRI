@@ -2,7 +2,7 @@
 
 #****************************************************************
 #*************Written By Mitchell Gibson USACPB CRIA*************
-#*************Last Updated Aug 08, 2023 v1.0*********************
+#*************Last Updated Aug 09, 2023 v1.0*********************
 #****************************************************************
 
 clear
@@ -249,7 +249,7 @@ fi
 echo " "
 echo "------------ V-256663 ------------"
 vami_utf=$(/opt/vmware/sbin/vami-lighttpd -p -f /opt/vmware/etc/lighttpd/lighttpd.conf 2>/dev/null|awk '/mimetype\.assign/,/\)/'|grep "text/"|grep -v "charset=utf-8"|sed -e 's/^[ ]*//')
-if [ "$vami_utf" = "" ]; then
+if [ -z "$vami_utf" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
 else
     echo -e "\e[31mOpen\e[0m"
@@ -2152,7 +2152,7 @@ photon_openssh_version=$(rpm -qa | grep openssh | grep -v server | grep -v clien
 photon_required_version="7.4"
 version_compare "$photon_openssh_version" "$photon_required_version"
 photon_comparison_result=$?
-if (( $photon_comparison_result -eq 1 )); then
+if [[ "$photon_comparison_result" -eq 1 ]]; then
     echo -e "\e[31mOpen\e[0m"
     echo rpm -qa|grep openssh
 else
@@ -3643,19 +3643,9 @@ else
 fi
 echo " "
 echo "------------ V-256597 ------------"
-postgres_priv_authorized=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -c "\du;"|grep "Create")
-postgres_priv_authorized_output=$(cat << EOF
-postgres   | Superuser, Create role, Create DB, Replication, Bypass RLS | {}
- vc         | Create DB                                                  | {}
- vlcmuser   | Create DB                                                  | {}
-EOF
-)
+postgres_priv_authorized=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -c "\du;"|grep "Create" | grep -wv postgres | grep -wv vc | grep -wv vlcmuser)
 postgres_priv_authorized=$( echo "$postgres_priv_authorized" | awk '{$1=$1};1' )
-postgres_priv_authorized_output=$( echo "$postgres_priv_authorized_output" | awk '{$1=$1};1' )
 if [ -z "$postgres_priv_authorized" ]; then
-    echo -e "\e[31mOpen\e[0m"
-    echo "PSQL can't connect to server; Postgresql may not be installed or this setting may not be configured"
-elif [ "$postgres_priv_authorized" = "$postgres_priv_authorized_output" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
 else
     echo -e "\e[31mOpen\e[0m"
@@ -3997,3 +3987,900 @@ echo ---------------------------------------------------------------------------
 echo ----------VMware vSphere 7.0 vCenter Appliance STS Security Technical Implementation Guide----------
 echo ----------------------------------------------------------------------------------------------------
 echo " "
+echo "------------ V-256745 ------------"
+sts_tcp_kept_alive=$(xmllint --xpath '/Server/Service/Connector[@port="${bio-custom.http.port}"]/@connectionTimeout' /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+sts_tcp_kept_alive_output=$(cat << EOF
+connectionTimeout="60000"
+EOF
+)
+sts_tcp_kept_alive=$( echo "$sts_tcp_kept_alive" | awk '{$1=$1};1' )
+sts_tcp_kept_alive_output=$( echo "$sts_tcp_kept_alive_output" | awk '{$1=$1};1' )
+if [ "$sts_tcp_kept_alive" = "$sts_tcp_kept_alive_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_tcp_kept_alive
+fi
+echo " "
+echo "------------ V-256746 ------------"
+sts_concurrent_connections=$(xmllint --xpath '/Server/Service/Executor[@name="tomcatThreadPool"]/@maxThreads' /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+sts_concurrent_connections_output=$(cat << EOF
+maxThreads="150"
+EOF
+)
+sts_concurrent_connections=$( echo "$sts_concurrent_connections" | awk '{$1=$1};1' )
+sts_concurrent_connections_output=$( echo "$sts_concurrent_connections_output" | awk '{$1=$1};1' )
+if [ "$sts_concurrent_connections" = "$sts_concurrent_connections_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_concurrent_connections
+fi
+echo " "
+echo "------------ V-256747 ------------"
+sts_max_post=$(xmllint --xpath '/Server/Service/Connector[@port="${bio-custom.http.port}"]/@maxPostSize' /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+sts_max_post=$( echo "$sts_max_post" | awk '{$1=$1};1' )
+if [ -z "$sts_max_post" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_max_post
+fi
+echo " "
+echo "------------ V-256748 ------------"
+sts_cookie_xss=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/http-only' - 2>/dev/null)
+sts_cookie_xss_output=$(cat << EOF
+<http-only>true</http-only>
+EOF
+)
+sts_cookie_xss=$( echo "$sts_cookie_xss" | awk '{$1=$1};1' )
+sts_cookie_xss_output=$( echo "$sts_cookie_xss_output" | awk '{$1=$1};1' )
+if [ "$sts_cookie_xss" = "$sts_cookie_xss_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_cookie_xss
+fi
+echo " "
+echo "------------ V-256749 ------------"
+sts_remote_access=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/server.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]/@pattern' - 2>/dev/null)
+sts_remote_access_output=$(cat << EOF
+pattern="%t %I [RemoteIP] %{X-Forwarded-For}i %u [Request] %h:%{remote}p to local %{local}p - %H %m %U%q    [Response] %s - %b bytes    [Perf] process %Dms / commit %Fms / conn [%X]"
+EOF
+)
+sts_remote_access=$( echo "$sts_remote_access" | awk '{$1=$1};1' )
+sts_remote_access_output=$( echo "$sts_remote_access_output" | awk '{$1=$1};1' )
+if [ "$sts_remote_access" = "$sts_remote_access_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_remote_access
+fi
+echo " "
+echo "------------ V-256750 ------------"
+sts_java_start_shut=$(grep "1catalina.org.apache.juli.FileHandler" /usr/lib/vmware-sso/vmware-sts/conf/logging.properties 2>/dev/null)
+sts_java_start_shut_output=$(cat << EOF
+handlers = 1catalina.org.apache.juli.FileHandler, 2localhost.org.apache.juli.FileHandler, 3manager.org.apache.juli.FileHandler, 4host-manager.org.apache.juli.FileHandler
+.handlers = 1catalina.org.apache.juli.FileHandler
+1catalina.org.apache.juli.FileHandler.level = FINE
+1catalina.org.apache.juli.FileHandler.directory = ${catalina.base}/logs/tomcat
+1catalina.org.apache.juli.FileHandler.prefix = catalina.
+1catalina.org.apache.juli.FileHandler.bufferSize = -1
+1catalina.org.apache.juli.FileHandler.formatter = java.util.logging.SimpleFormatter
+1catalina.org.apache.juli.FileHandler.maxDays = 10
+org.apache.catalina.startup.Catalina.handlers = 1catalina.org.apache.juli.FileHandler
+EOF
+)
+sts_java_start_shut=$( echo "$sts_java_start_shut" | awk '{$1=$1};1' )
+sts_java_start_shut_output=$( echo "$sts_java_start_shut_output" | awk '{$1=$1};1' )
+if [ "$sts_java_start_shut" = "$sts_java_start_shut_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_java_start_shut
+fi
+echo " "
+echo "------------ V-256751 ------------"
+sts_log_priv_users=$(find /storage/log/vmware/sso/ -xdev -type f -a '(' -perm -o+w -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+sts_log_priv_users=$( echo "$sts_log_priv_users" | awk '{$1=$1};1' )
+if [ -z "$sts_log_priv_users" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_log_priv_users
+fi
+echo " "
+echo "------------ V-256752 ------------"
+sts_file_integrity=$(rpm -V vmware-identity-sts|grep "^..5......"|grep -v -E "\.properties|\.xml|\.conf" 2>/dev/null)
+sts_file_integrity=$( echo "$sts_file_integrity" | awk '{$1=$1};1' )
+if [ -z "$sts_file_integrity" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_file_integrity
+fi
+echo " "
+echo "------------ V-256753 ------------"
+sts_one_web_app=$(ls /usr/lib/vmware-sso/vmware-sts/webapps/*.war)
+sts_one_web_app_output=$(cat << EOF
+/usr/lib/vmware-sso/vmware-sts/webapps/ROOT.war
+EOF
+)
+sts_one_web_app=$( echo "$sts_one_web_app" | awk '{$1=$1};1' )
+sts_one_web_app_output=$( echo "$sts_one_web_app_output" | awk '{$1=$1};1' )
+if [ "$sts_one_web_app" = "$sts_one_web_app_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_one_web_app
+fi
+echo " "
+echo "------------ V-256754 ------------"
+sts_unused_realms=$(grep UserDatabaseRealm /usr/lib/vmware-sso/vmware-sts/conf/server.xml)
+sts_unused_realms=$( echo "$sts_unused_realms" | awk '{$1=$1};1' )
+if [ -z "$sts_unused_realms" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_unused_realms
+fi
+echo " "
+echo "------------ V-256755 ------------"
+sts_internal_packages=$(grep "package.access" /usr/lib/vmware-sso/vmware-sts/conf/catalina.properties 2>/dev/null)
+sts_internal_packages_output=$(cat << EOF
+package.access=sun.,org.apache.catalina.,org.apache.coyote.,org.apache.tomcat.,org.apache.jasper.
+EOF
+)
+sts_internal_packages=$( echo "$sts_internal_packages" | awk '{$1=$1};1' )
+sts_internal_packages_output=$( echo "$sts_internal_packages_output" | awk '{$1=$1};1' )
+if [ "$sts_internal_packages" = "$sts_internal_packages_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_internal_packages
+fi
+echo " "
+echo "------------ V-256756 ------------"
+sts_mime_shell=$(grep -En '(x-csh<)|(x-sh<)|(x-shar<)|(x-ksh<)' /usr/lib/vmware-sso/vmware-sts/conf/web.xml)
+sts_mime_shell=$( echo "$sts_mime_shell" | awk '{$1=$1};1' )
+if [ -z "$sts_mime_shell" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_mime_shell
+fi
+echo " "
+echo "------------ V-256757 ------------"
+sts_java_servlet=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '/web-app/servlet-mapping/servlet-name[text()="jsp"]/parent::servlet-mapping' - 2>/dev/null)
+sts_java_servlet_output=$(cat << EOF
+<servlet-mapping> 
+    <servlet-name>jsp</servlet-name> 
+    <url-pattern>*.jsp</url-pattern> 
+    <url-pattern>*.jspx</url-pattern> 
+</servlet-mapping>
+EOF
+)
+sts_java_servlet=$( echo "$sts_java_servlet" | awk '{$1=$1};1' )
+sts_java_servlet_output=$( echo "$sts_java_servlet_output" | awk '{$1=$1};1' )
+if [ "$sts_java_servlet" = "$sts_java_servlet_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_java_servlet
+fi
+echo " "
+echo "------------ V-256758 ------------"
+sts_webdav_servlet=$(grep -n 'webdav' /usr/lib/vmware-sso/vmware-sts/conf/web.xml)
+sts_webdav_servlet=$( echo "$sts_webdav_servlet" | awk '{$1=$1};1' )
+if [ -z "$sts_webdav_servlet" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_webdav_servlet
+fi
+echo " "
+echo "------------ V-256759 ------------"
+sts_memory_leak=$(grep JreMemoryLeakPreventionListener /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+sts_memory_leak_output=$(cat << EOF
+<Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
+EOF
+)
+sts_memory_leak=$( echo "$sts_memory_leak" | awk '{$1=$1};1' )
+sts_memory_leak_output=$( echo "$sts_memory_leak_output" | awk '{$1=$1};1' )
+if [ "$sts_memory_leak" = "$sts_memory_leak_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_memory_leak
+fi
+echo " "
+echo "------------ V-256760 ------------"
+sts_webdir_tree=$(find /usr/lib/vmware-sso/vmware-sts/webapps/ -type l -ls)
+sts_webdir_tree=$( echo "$sts_webdir_tree" | awk '{$1=$1};1' )
+if [ -z "$sts_webdir_tree" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_webdir_tree
+fi
+echo " "
+echo "------------ V-256761 ------------"
+sts_out_of_box=$(find /usr/lib/vmware-sso/vmware-sts/ -xdev -type f -a '(' -not -user root -o -not -group root ')' -exec ls -ld {} \;)
+sts_out_of_box=$( echo "$sts_out_of_box" | awk '{$1=$1};1' )
+if [ -z "$sts_out_of_box" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_out_of_box
+fi
+echo " "
+echo "------------ V-256762 ------------"
+sts_system_init=$(grep EXIT_ON_INIT_FAILURE /usr/lib/vmware-sso/vmware-sts/conf/catalina.properties 2>/dev/null)
+sts_system_init_output=$(cat << EOF
+org.apache.catalina.startup.EXIT_ON_INIT_FAILURE=true
+EOF
+)
+sts_system_init=$( echo "$sts_system_init" | awk '{$1=$1};1' )
+sts_system_init_output=$( echo "$sts_system_init_output" | awk '{$1=$1};1' )
+if [ "$sts_system_init" = "$sts_system_init_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_system_init
+fi
+echo " "
+echo "------------ V-256763 ------------"
+sts_allowed_connections=$(xmllint --xpath '/Server/Service/Connector[@port="${bio-custom.http.port}"]/@acceptCount' /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+sts_allowed_connections_output=$(cat << EOF
+acceptCount="100"
+EOF
+)
+sts_allowed_connections=$( echo "$sts_allowed_connections" | awk '{$1=$1};1' )
+sts_allowed_connections_output=$( echo "$sts_allowed_connections_output" | awk '{$1=$1};1' )
+if [ "$sts_allowed_connections" = "$sts_allowed_connections_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_allowed_connections
+fi
+echo " "
+echo "------------ V-256764 ------------"
+sts_uri_encoding=$(xmllint --xpath '/Server/Service/Connector[@port="${bio-custom.http.port}"]/@URIEncoding' /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+sts_uri_encoding_output=$(cat << EOF
+URIEncoding="UTF-8"
+EOF
+)
+sts_uri_encoding=$( echo "$sts_uri_encoding" | awk '{$1=$1};1' )
+sts_uri_encoding_output=$( echo "$sts_uri_encoding_output" | awk '{$1=$1};1' )
+if [ "$sts_uri_encoding" = "$sts_uri_encoding_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_uri_encoding
+fi
+echo " "
+echo "------------ V-256765 ------------"
+sts_character_encoding=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '/web-app/filter-mapping/filter-name[text()="setCharacterEncodingFilter"]/parent::filter-mapping' - 2>/dev/null)
+sts_character_encoding_output=$(cat << EOF
+<filter-mapping> 
+    <filter-name>setCharacterEncodingFilter</filter-name> 
+    <url-pattern>/*</url-pattern> 
+</filter-mapping>
+EOF
+)
+sts_character_encoding=$( echo "$sts_character_encoding" | awk '{$1=$1};1' )
+sts_character_encoding_output=$( echo "$sts_character_encoding_output" | awk '{$1=$1};1' )
+if [ "$sts_character_encoding" = "$sts_character_encoding_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_character_encoding
+fi
+echo " "
+echo "------------ V-256766 ------------"
+sts_default_webpage=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '/web-app/welcome-file-list' - 2>/dev/null)
+sts_default_webpage_output=$(cat << EOF
+<welcome-file-list> 
+    <welcome-file>index.html</welcome-file> 
+    <welcome-file>index.htm</welcome-file> 
+    <welcome-file>index.jsp</welcome-file> 
+</welcome-file-list>
+EOF
+)
+sts_default_webpage=$( echo "$sts_default_webpage" | awk '{$1=$1};1' )
+sts_default_webpage_output=$( echo "$sts_default_webpage_output" | awk '{$1=$1};1' )
+if [ "$sts_default_webpage" = "$sts_default_webpage_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_default_webpage
+fi
+echo " "
+echo "------------ V-256767 ------------"
+sts_dir_listings=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '//param-name[text()="listings"]/parent::init-param' - 2>/dev/null)
+sts_dir_listings_output=$(cat << EOF
+<init-param> 
+      <param-name>listings</param-name> 
+      <param-value>false</param-value> 
+</init-param>
+EOF
+)
+sts_dir_listings=$( echo "$sts_dir_listings" | awk '{$1=$1};1' )
+sts_dir_listings_output=$( echo "$sts_dir_listings_output" | awk '{$1=$1};1' )
+if [ "$sts_dir_listings" = "$sts_dir_listings_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_dir_listings
+fi
+echo " "
+echo "------------ V-256768 ------------"
+sts_error_reports=$(xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.ErrorReportValve"]' /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+sts_error_reports_output=$(cat << EOF
+<Valve className="org.apache.catalina.valves.ErrorReportValve" showReport="false" showServerInfo="false"/>
+EOF
+)
+sts_error_reports=$( echo "$sts_error_reports" | awk '{$1=$1};1' )
+sts_error_reports_output=$( echo "$sts_error_reports_output" | awk '{$1=$1};1' )
+if [ "$sts_error_reports" = "$sts_error_reports_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_error_reports
+fi
+echo " "
+echo "------------ V-256769 ------------"
+sts_trace_requests=$(grep allowTrace /usr/lib/vmware-sso/vmware-sts/conf/server.xml)
+sts_trace_requests=$( echo "$sts_trace_requests" | awk '{$1=$1};1' )
+if [ -z "$sts_trace_requests" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [[ "$sts_trace_requests" == *"true"* ]]
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_trace_requests
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256770 ------------"
+sts_debug_disabled=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '//param-name[text()="debug"]/parent::init-param' - 2>/dev/null)
+sts_debug_disabled_output=$(cat << EOF
+<init-param>
+    <param-name>debug</param-name>
+    <param-value>0</param-value>
+</init-param>
+EOF
+)
+sts_debug_disabled=$( echo "$sts_debug_disabled" | awk '{$1=$1};1' )
+sts_debug_disabled_output=$( echo "$sts_debug_disabled_output" | awk '{$1=$1};1' )
+if [ "$sts_debug_disabled" = "$sts_debug_disabled_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_debug_disabled
+fi
+echo " "
+echo "------------ V-256771 ------------"
+sts_appro_ports=$(grep 'bio' /usr/lib/vmware-sso/vmware-sts/conf/catalina.properties 2>/dev/null)
+sts_appro_ports_output=$(cat << EOF
+bio-custom.http.port=7080
+bio-custom.https.port=8443
+bio-ssl-clientauth.https.port=3128
+bio-ssl-localhost.https.port=7444
+EOF
+)
+sts_appro_ports=$( echo "$sts_appro_ports" | awk '{$1=$1};1' )
+sts_appro_ports_output=$( echo "$sts_appro_ports_output" | awk '{$1=$1};1' )
+if [ "$sts_appro_ports" = "$sts_appro_ports_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_appro_ports
+fi
+echo " "
+echo "------------ V-256772 ------------"
+sts_shutdown_port=$(grep 'base.shutdown.port' /usr/lib/vmware-sso/vmware-sts/conf/catalina.properties 2>/dev/null)
+sts_shutdown_port_output=$(cat << EOF
+base.shutdown.port=-1
+EOF
+)
+sts_shutdown_port=$( echo "$sts_shutdown_port" | awk '{$1=$1};1' )
+sts_shutdown_port_output=$( echo "$sts_shutdown_port_output" | awk '{$1=$1};1' )
+if [ "$sts_shutdown_port" = "$sts_shutdown_port_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_shutdown_port
+fi
+echo " "
+echo "------------ V-256773 ------------"
+sts_secure_cookies=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/secure' - 2>/dev/null)
+sts_secure_cookies_output=$(cat << EOF
+<secure>true</secure>
+EOF
+)
+sts_secure_cookies=$( echo "$sts_secure_cookies" | awk '{$1=$1};1' )
+sts_secure_cookies_output=$( echo "$sts_secure_cookies_output" | awk '{$1=$1};1' )
+if [ "$sts_secure_cookies" = "$sts_secure_cookies_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_secure_cookies
+fi
+echo " "
+echo "------------ V-256774 ------------"
+sts_default_readonly=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed '2 s/xmlns=".*"//g' | xmllint --xpath '/web-app/servlet/servlet-name[text()="default"]/../init-param/param-name[text()="readonly"]/../param-value[text()="false"]' - 2>/dev/null)
+sts_default_readonly=$( echo "$sts_default_readonly" | awk '{$1=$1};1' )
+if [ -z "$sts_default_readonly" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_default_readonly
+fi
+echo " "
+echo "------------ V-256775 ------------"
+sts_log_backup=$(rpm -V VMware-visl-integration|grep vmware-services-sso-services.conf|grep "^..5......")
+sts_log_backup=$( echo "$sts_log_backup" | awk '{$1=$1};1' )
+if [ -z "$sts_log_backup" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $sts_log_backup
+fi
+echo " "
+echo " "
+echo ---------------------------------------------------------------------------------------------------
+echo ----------VMware vSphere 7.0 vCenter Appliance UI Security Technical Implementation Guide----------
+echo ---------------------------------------------------------------------------------------------------
+echo " "
+echo "------------ V-256778 ------------"
+ui_tcp_keepalive=$(xmllint --xpath '/Server/Service/Connector[@port="${http.port}"]/@connectionTimeout' /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+ui_tcp_keepalive_output=$(cat << EOF
+connectionTimeout="300000"
+EOF
+)
+ui_tcp_keepalive=$( echo "$ui_tcp_keepalive" | awk '{$1=$1};1' )
+ui_tcp_keepalive_output=$( echo "$ui_tcp_keepalive_output" | awk '{$1=$1};1' )
+if [ "$ui_tcp_keepalive" = "$ui_tcp_keepalive_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_tcp_keepalive
+fi
+echo " "
+echo "------------ V-256779 ------------"
+ui_concurrent_connections=$(xmllint --xpath '/Server/Service/Connector[@port="${http.port}"]/@maxThreads' /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+ui_concurrent_connections_output=$(cat << EOF
+maxThreads="800"
+EOF
+)
+ui_concurrent_connections=$( echo "$ui_concurrent_connections" | awk '{$1=$1};1' )
+ui_concurrent_connections_output=$( echo "$ui_concurrent_connections_output" | awk '{$1=$1};1' )
+if [ "$ui_concurrent_connections" = "$ui_concurrent_connections_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_concurrent_connections
+fi
+echo " "
+echo "------------ V-256780 ------------"
+ui_post_request=$(xmllint --xpath '/Server/Service/Connector[@port="${http.port}"]/@maxPostSize' /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+ui_post_request=$( echo "$ui_post_request" | awk '{$1=$1};1' )
+if [ -z "$ui_post_request" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_post_request
+fi
+echo " "
+echo "------------ V-256781 ------------"
+ui_cookie_xss=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/context.xml | xmllint --xpath '/Context/@useHttpOnly' - 2>/dev/null)
+ui_cookie_xss_output=$(cat << EOF
+useHttpOnly="true"
+EOF
+)
+ui_cookie_xss=$( echo "$ui_cookie_xss" | awk '{$1=$1};1' )
+ui_cookie_xss_output=$( echo "$ui_cookie_xss_output" | awk '{$1=$1};1' )
+if [ "$ui_cookie_xss" = "$ui_cookie_xss_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_cookie_xss
+fi
+echo " "
+echo "------------ V-256782 ------------"
+ui_remote_access=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/server.xml | xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]/@pattern' - 2>/dev/null)
+ui_remote_access_output=$(cat << EOF
+pattern="%h %{x-forwarded-for}i %l %u %t &quot;%r&quot; %s %b %{#hashedClientId#}s %{#hashedRequestId#}r %I %D"
+EOF
+)
+ui_remote_access=$( echo "$ui_remote_access" | awk '{$1=$1};1' )
+ui_remote_access_output=$( echo "$ui_remote_access_output" | awk '{$1=$1};1' )
+if [ "$ui_remote_access" = "$ui_remote_access_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_remote_access
+fi
+echo " "
+echo "------------ V-256783 ------------"
+ui_start_shut_log=$(grep StreamRedirectFile /etc/vmware/vmware-vmon/svcCfgfiles/vsphere-ui.json 2>/dev/null)
+ui_start_shut_log_output=$(cat << EOF
+"StreamRedirectFile": "%VMWARE_LOG_DIR%/vmware/vsphere-ui/logs/vsphere-ui-runtime.log",
+EOF
+)
+ui_start_shut_log=$( echo "$ui_start_shut_log" | awk '{$1=$1};1' )
+ui_start_shut_log_output=$( echo "$ui_start_shut_log_output" | awk '{$1=$1};1' )
+if [ "$ui_start_shut_log" = "$ui_start_shut_log_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_start_shut_log
+fi
+echo " "
+echo "------------ V-256784 ------------"
+ui_priv_users_logs=$(find /var/log/vmware/vsphere-ui/ -xdev -type f -a '(' -perm -o+w -o -not -user vsphere-ui -o -not -group users -a -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+ui_priv_users_logs=$( echo "$ui_priv_users_logs" | awk '{$1=$1};1' )
+if [ -z "$ui_priv_users_logs" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_priv_users_logs
+fi
+echo " "
+echo "------------ V-256785 ------------"
+ui_file_integrity=$(rpm -V vsphere-ui|grep "^..5......"|grep -v -E "\.prop|\.pass|\.xml|\.json")
+ui_file_integrity=$( echo "$ui_file_integrity" | awk '{$1=$1};1' )
+if [ -z "$ui_file_integrity" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_file_integrity
+fi
+echo " "
+echo "------------ V-256786 ------------"
+ui_authorized_plugins=$(diff <(find /usr/lib/vmware-vsphere-ui/plugin-packages/vsphere-client/plugins -type f|sort) <(rpm -ql vsphere-ui|grep "/usr/lib/vmware-vsphere-ui/plugin-packages/vsphere-client/plugins/"|sort))
+ui_authorized_plugins=$( echo "$ui_authorized_plugins" | awk '{$1=$1};1' )
+if [ -z "$ui_authorized_plugins" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo "Validate these plugins, and see if they are approved"
+    echo $ui_authorized_plugins
+fi
+echo " "
+echo "------------ V-256787 ------------"
+ui_userdb_realm=$(grep UserDatabaseRealm /usr/lib/vmware-vsphere-ui/server/conf/server.xml)
+ui_userdb_realm=$( echo "$ui_userdb_realm" | awk '{$1=$1};1' )
+if [ -z "$ui_userdb_realm" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_userdb_realm
+fi
+echo " "
+echo "------------ V-256788 ------------"
+ui_internal_packages=$(grep "package.access" /usr/lib/vmware-vsphere-ui/server/conf/catalina.properties 2>/dev/null)
+ui_internal_packages_output=$(cat << EOF
+package.access=sun.,org.apache.catalina.,org.apache.coyote.,org.apache.jasper.,org.apache.tomcat.
+EOF
+)
+ui_internal_packages=$( echo "$ui_internal_packages" | awk '{$1=$1};1' )
+ui_internal_packages_output=$( echo "$ui_internal_packages_output" | awk '{$1=$1};1' )
+if [ "$ui_internal_packages" = "$ui_internal_packages_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_internal_packages
+fi
+echo " "
+echo "------------ V-256789 ------------"
+ui_mime_shell=$(grep -En '(x-csh<)|(x-sh<)|(x-shar<)|(x-ksh<)' /usr/lib/vmware-vsphere-ui/server/conf/web.xml)
+ui_mime_shell=$( echo "$ui_mime_shell" | awk '{$1=$1};1' )
+if [ -z "$ui_mime_shell" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_mime_shell
+fi
+echo " "
+echo "------------ V-256790 ------------"
+ui_java_pages=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/servlet-mapping/servlet-name[text()="jsp"]/parent::servlet-mapping' - 2>/dev/null)
+ui_java_pages_output=$(cat << EOF
+<servlet-mapping> 
+  <servlet-name>jsp</servlet-name> 
+  <url-pattern>*.jsp</url-pattern> 
+  <url-pattern>*.jspx</url-pattern> 
+</servlet-mapping>
+EOF
+)
+ui_java_pages=$( echo "$ui_java_pages" | awk '{$1=$1};1' )
+ui_java_pages_output=$( echo "$ui_java_pages_output" | awk '{$1=$1};1' )
+if [ "$ui_java_pages" = "$ui_java_pages_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_java_pages
+fi
+echo " "
+echo "------------ V-256791 ------------"
+ui_webdav_servlet=$(grep -n 'webdav' /usr/lib/vmware-vsphere-ui/server/conf/web.xml)
+ui_webdav_servlet=$( echo "$ui_webdav_servlet" | awk '{$1=$1};1' )
+if [ -z "$ui_webdav_servlet" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_webdav_servlet
+fi
+echo " "
+echo "------------ V-256792 ------------"
+ui_memory_leak=$(grep JreMemoryLeakPreventionListener /usr/lib/vmware-vsphere-ui/server/conf/server.xml)
+ui_memory_leak_output=$(cat << EOF
+<Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
+EOF
+)
+ui_memory_leak=$( echo "$ui_memory_leak" | awk '{$1=$1};1' )
+ui_memory_leak_output=$( echo "$ui_memory_leak_output" | awk '{$1=$1};1' )
+if [ "$ui_memory_leak" = "$ui_memory_leak_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_memory_leak
+fi
+echo " "
+echo "------------ V-256793 ------------"
+ui_symbolic_webdir=$(find /usr/lib/vmware-vsphere-ui/server/static/ -type l -ls 2>/dev/null)
+ui_symbolic_webdir=$( echo "$ui_symbolic_webdir" | awk '{$1=$1};1' )
+if [ -z "$ui_symbolic_webdir" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_symbolic_webdir
+fi
+echo " "
+echo "------------ V-256794 ------------"
+ui_outofbox_dirtree=$(find /usr/lib/vmware-vsphere-ui/server/lib /usr/lib/vmware-vsphere-ui/server/conf -xdev -type f -a '(' -perm -o+w -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+ui_outofbox_dirtree=$( echo "$ui_outofbox_dirtree" | awk '{$1=$1};1' )
+if [ -z "$ui_outofbox_dirtree" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_outofbox_dirtree
+fi
+echo " "
+echo "------------ V-256795 ------------"
+ui_cookie_path=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/context.xml | xmllint --xpath '/Context/@sessionCookiePath' - 2>/dev/null)
+ui_cookie_path_output=$(cat << EOF
+sessionCookiePath="/ui"
+EOF
+)
+ui_cookie_path=$( echo "$ui_cookie_path" | awk '{$1=$1};1' )
+ui_cookie_path_output=$( echo "$ui_cookie_path_output" | awk '{$1=$1};1' )
+if [ "$ui_cookie_path" = "$ui_cookie_path_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_cookie_path
+fi
+echo " "
+echo "------------ V-256796 ------------"
+ui_systeminit_startshut=$(grep EXIT_ON_INIT_FAILURE /usr/lib/vmware-vsphere-ui/server/conf/catalina.properties 2>/dev/null)
+ui_systeminit_startshut_output=$(cat << EOF
+org.apache.catalina.startup.EXIT_ON_INIT_FAILURE=true
+EOF
+)
+ui_systeminit_startshut=$( echo "$ui_systeminit_startshut" | awk '{$1=$1};1' )
+ui_systeminit_startshut_output=$( echo "$ui_systeminit_startshut_output" | awk '{$1=$1};1' )
+if [ "$ui_systeminit_startshut" = "$ui_systeminit_startshut_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_systeminit_startshut
+fi
+echo " "
+echo "------------ V-256797 ------------"
+ui_allowed_connections=$(xmllint --xpath '/Server/Service/Connector[@port="${http.port}"]/@acceptCount' /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+ui_allowed_connections_output=$(cat << EOF
+acceptCount="300"
+EOF
+)
+ui_allowed_connections=$( echo "$ui_allowed_connections" | awk '{$1=$1};1' )
+ui_allowed_connections_output=$( echo "$ui_allowed_connections_output" | awk '{$1=$1};1' )
+if [ "$ui_allowed_connections" = "$ui_allowed_connections_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_allowed_connections
+fi
+echo " "
+echo "------------ V-256798 ------------"
+ui_uri_encoding=$(xmllint --xpath '/Server/Service/Connector[@port="${http.port}"]/@URIEncoding' /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+ui_uri_encoding_output=$(cat << EOF
+URIEncoding="UTF-8"
+EOF
+)
+ui_uri_encoding=$( echo "$ui_uri_encoding" | awk '{$1=$1};1' )
+ui_uri_encoding_output=$( echo "$ui_uri_encoding_output" | awk '{$1=$1};1' )
+if [ "$ui_uri_encoding" = "$ui_uri_encoding_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_uri_encoding
+fi
+echo " "
+echo "------------ V-256799 ------------"
+ui_default_webpage=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/welcome-file-list' - 2>/dev/null)
+ui_default_webpage_output=$(cat << EOF
+<welcome-file-list> 
+  <welcome-file>index.html</welcome-file> 
+  <welcome-file>index.htm</welcome-file> 
+  <welcome-file>index.jsp</welcome-file> 
+</welcome-file-list>
+EOF
+)
+ui_default_webpage=$( echo "$ui_default_webpage" | awk '{$1=$1};1' )
+ui_default_webpage_output=$( echo "$ui_default_webpage_output" | awk '{$1=$1};1' )
+if [ "$ui_default_webpage" = "$ui_default_webpage_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_default_webpage
+fi
+echo " "
+echo "------------ V-256800 ------------"
+ui_no_dir_listings=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '//param-name[text()="listings"]/parent::init-param' - 2>/dev/null)
+ui_no_dir_listings_output=$(cat << EOF
+<init-param> 
+      <param-name>listings</param-name> 
+      <param-value>false</param-value> 
+</init-param>
+EOF
+)
+ui_no_dir_listings=$( echo "$ui_no_dir_listings" | awk '{$1=$1};1' )
+ui_no_dir_listings_output=$( echo "$ui_no_dir_listings_output" | awk '{$1=$1};1' )
+if [ "$ui_no_dir_listings" = "$ui_no_dir_listings_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_no_dir_listings
+fi
+echo " "
+echo "------------ V-256801 ------------"
+ui_hide_server_version=$(xmllint --xpath '/Server/Service/Connector[@port="${http.port}"]/@server' /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+ui_hide_server_version_output=$(cat << EOF
+server="Anonymous"
+EOF
+)
+ui_hide_server_version=$( echo "$ui_hide_server_version" | awk '{$1=$1};1' )
+ui_hide_server_version_output=$( echo "$ui_hide_server_version_output" | awk '{$1=$1};1' )
+if [ "$ui_hide_server_version" = "$ui_hide_server_version_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_hide_server_version
+fi
+echo " "
+echo "------------ V-256802 ------------"
+ui_minimal_info=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/server.xml | xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.ErrorReportValve"]' - 2>/dev/null)
+ui_minimal_info_output=$(cat << EOF
+<Valve className="org.apache.catalina.valves.ErrorReportValve" showServerInfo="false" showReport="false"/>
+EOF
+)
+ui_minimal_info=$( echo "$ui_minimal_info" | awk '{$1=$1};1' )
+ui_minimal_info_output=$( echo "$ui_minimal_info_output" | awk '{$1=$1};1' )
+if [ "$ui_minimal_info" = "$ui_minimal_info_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_minimal_info
+fi
+echo " "
+echo "------------ V-256803 ------------"
+ui_trace_requests=$(grep allowTrace /usr/lib/vmware-vsphere-ui/server/conf/server.xml)
+ui_trace_requests=$( echo "$ui_trace_requests" | awk '{$1=$1};1' )
+if [ -z "$ui_trace_requests" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [[ "$ui_trace_requests" == *"true"* ]]
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_trace_requests
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256804 ------------"
+ui_debug_option_off=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '//param-name[text()="debug"]/parent::init-param' - 2>/dev/null)
+ui_debug_option_off_output=$(cat << EOF
+<init-param> 
+  <param-name>debug</param-name> 
+  <param-value>0</param-value> 
+</init-param>
+EOF
+)
+ui_debug_option_off=$( echo "$ui_debug_option_off" | awk '{$1=$1};1' )
+ui_debug_option_off_output=$( echo "$ui_debug_option_off_output" | awk '{$1=$1};1' )
+if [ "$ui_debug_option_off" = "$ui_debug_option_off_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_debug_option_off
+fi
+echo " "
+echo "------------ V-256805 ------------"
+ui_log_storage_capacity=$(rpm -V vsphere-ui|grep serviceability.xml|grep "^..5......")
+ui_log_storage_capacity=$( echo "$ui_log_storage_capacity" | awk '{$1=$1};1' )
+if [ -z "$ui_log_storage_capacity" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256806 ------------"
+ui_log_perm_repo=$(rpm -V VMware-visl-integration|grep vmware-services-vsphere-ui.conf|grep "^..5......")
+ui_log_perm_repo=$( echo "$ui_log_perm_repo" | awk '{$1=$1};1' )
+if [ -z "$ui_log_perm_repo" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
+echo " "
+echo "------------ V-256807 ------------"
+ui_appro_ports=$(grep '\.port' /usr/lib/vmware-vsphere-ui/server/conf/catalina.properties 2>/dev/null)
+ui_appro_ports_output=$(cat << EOF
+http.port=5090 
+proxy.port=443
+EOF
+)
+ui_appro_ports=$( echo "$ui_appro_ports" | awk '{$1=$1};1' )
+ui_appro_ports_output=$( echo "$ui_appro_ports_output" | awk '{$1=$1};1' )
+if [ "$ui_appro_ports" = "$ui_appro_ports_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_appro_ports
+fi
+echo " "
+echo "------------ V-256808 ------------"
+ui_disable_shutdown_port=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/server.xml | sed '2 s/xmlns=".*"//g' |  xmllint --xpath '/Server/@port' - 2>/dev/null)
+ui_disable_shutdown_port_output=$(cat << EOF
+port="${shutdown.port}"
+EOF
+)
+ui_disable_shutdown_port=$( echo "$ui_disable_shutdown_port" | awk '{$1=$1};1' )
+ui_disable_shutdown_port_output=$( echo "$ui_disable_shutdown_port_output" | awk '{$1=$1};1' )
+if [ "$ui_disable_shutdown_port" = "$ui_disable_shutdown_port_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_disable_shutdown_port
+fi
+echo " "
+echo "------------ V-256809 ------------"
+ui_secure_cookies=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/secure' - 2>/dev/null)
+ui_secure_cookies_output=$(cat << EOF
+<secure>true</secure>
+EOF
+)
+ui_secure_cookies=$( echo "$ui_secure_cookies" | awk '{$1=$1};1' )
+ui_secure_cookies_output=$( echo "$ui_secure_cookies_output" | awk '{$1=$1};1' )
+if [ "$ui_secure_cookies" = "$ui_secure_cookies_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_secure_cookies
+fi
+echo " "
+echo "------------ V-256810 ------------"
+ui_default_readonly=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/servlet/servlet-name[text()="default"]/../init-param/param-name[text()="readonly"]/../param-value[text()="false"]' - 2>/dev/null)
+ui_default_readonly=$( echo "$ui_default_readonly" | awk '{$1=$1};1' )
+if [ -z "$ui_default_readonly" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $ui_default_readonly
+fi
+echo " "
+echo " "
+echo --------------------------------------------------------------------------------------------------------
+echo ----------VMware vSphere 7.0 vCenter Appliance Vcenter Security Technical Implementation Guide----------
+echo --------------------------------------------------------------------------------------------------------
+echo " "
+echo "These are GUI Checks and this concludes the output of this script"

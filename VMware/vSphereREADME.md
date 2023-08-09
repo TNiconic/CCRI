@@ -5,9 +5,6 @@
 
 #SSH as the local user (usually root) then you will see a prompt
   ssh root@<IPaddr>
-  
-#Get superuser privileges in order to run the script
-  sudo su
 
 #Create the file and paste in the contents of vSphere.sh
   vim vSphere.sh

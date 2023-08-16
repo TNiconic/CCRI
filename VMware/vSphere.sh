@@ -2,7 +2,7 @@
 
 #****************************************************************
 #*************Written By Mitchell Gibson USACPB CRIA*************
-#*************Last Updated Aug 09, 2023 v1.0*********************
+#*************Last Updated Aug 16, 2023 v1.0*********************
 #****************************************************************
 
 #Updated August 16, 2023: Bug fixes
@@ -4061,8 +4061,7 @@ fi
 echo " "
 echo "------------ V-256750 ------------"
 sts_java_start_shut=$(grep "1catalina.org.apache.juli.FileHandler" /usr/lib/vmware-sso/vmware-sts/conf/logging.properties 2>/dev/null)
-sts_java_start_shut_output=$(cat << EOF
-handlers = 1catalina.org.apache.juli.FileHandler, 2localhost.org.apache.juli.FileHandler, 3manager.org.apache.juli.FileHandler, 4host-manager.org.apache.juli.FileHandler
+sts_java_start_shut_output='handlers = 1catalina.org.apache.juli.FileHandler, 2localhost.org.apache.juli.FileHandler, 3manager.org.apache.juli.FileHandler, 4host-manager.org.apache.juli.FileHandler
 .handlers = 1catalina.org.apache.juli.FileHandler
 1catalina.org.apache.juli.FileHandler.level = FINE
 1catalina.org.apache.juli.FileHandler.directory = "${catalina.base}"/logs/tomcat
@@ -4070,9 +4069,7 @@ handlers = 1catalina.org.apache.juli.FileHandler, 2localhost.org.apache.juli.Fil
 1catalina.org.apache.juli.FileHandler.bufferSize = -1
 1catalina.org.apache.juli.FileHandler.formatter = java.util.logging.SimpleFormatter
 1catalina.org.apache.juli.FileHandler.maxDays = 10
-org.apache.catalina.startup.Catalina.handlers = 1catalina.org.apache.juli.FileHandler
-EOF
-)
+org.apache.catalina.startup.Catalina.handlers = 1catalina.org.apache.juli.FileHandler'
 sts_java_start_shut=$( echo "$sts_java_start_shut" | awk '{$1=$1};1' )
 sts_java_start_shut_output=$( echo "$sts_java_start_shut_output" | awk '{$1=$1};1' )
 if [ "$sts_java_start_shut" = "$sts_java_start_shut_output" ]; then
@@ -4842,10 +4839,7 @@ fi
 echo " "
 echo "------------ V-256808 ------------"
 ui_disable_shutdown_port=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/server.xml | sed '2 s/xmlns=".*"//g' |  xmllint --xpath '/Server/@port' - 2>/dev/null)
-ui_disable_shutdown_port_output=$(cat << EOF
-port="${shutdown.port}"
-EOF
-)
+ui_disable_shutdown_port_output='port="${shutdown.port}"'
 ui_disable_shutdown_port=$( echo "$ui_disable_shutdown_port" | awk '{$1=$1};1' )
 ui_disable_shutdown_port_output=$( echo "$ui_disable_shutdown_port_output" | awk '{$1=$1};1' )
 if [ "$ui_disable_shutdown_port" = "$ui_disable_shutdown_port_output" ]; then

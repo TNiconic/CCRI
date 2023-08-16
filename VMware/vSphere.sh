@@ -5,6 +5,8 @@
 #*************Last Updated Aug 09, 2023 v1.0*********************
 #****************************************************************
 
+#Updated August 16, 2023: Bug fixes
+
 clear
 
 #Get Host Information

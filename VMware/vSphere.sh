@@ -4063,7 +4063,7 @@ sts_java_start_shut_output=$(cat << EOF
 handlers = 1catalina.org.apache.juli.FileHandler, 2localhost.org.apache.juli.FileHandler, 3manager.org.apache.juli.FileHandler, 4host-manager.org.apache.juli.FileHandler
 .handlers = 1catalina.org.apache.juli.FileHandler
 1catalina.org.apache.juli.FileHandler.level = FINE
-1catalina.org.apache.juli.FileHandler.directory = ${catalina.base}/logs/tomcat
+1catalina.org.apache.juli.FileHandler.directory = "${catalina.base}"/logs/tomcat
 1catalina.org.apache.juli.FileHandler.prefix = catalina.
 1catalina.org.apache.juli.FileHandler.bufferSize = -1
 1catalina.org.apache.juli.FileHandler.formatter = java.util.logging.SimpleFormatter
@@ -4334,7 +4334,7 @@ sts_trace_requests=$(grep allowTrace /usr/lib/vmware-sso/vmware-sts/conf/server.
 sts_trace_requests=$( echo "$sts_trace_requests" | awk '{$1=$1};1' )
 if [ -z "$sts_trace_requests" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
-elif [[ "$sts_trace_requests" == *"true"* ]]
+elif [[ "$sts_trace_requests" == *"true"* ]]; then
     echo -e "\e[31mOpen\e[0m"
     echo $sts_trace_requests
 else
@@ -4779,7 +4779,7 @@ ui_trace_requests=$(grep allowTrace /usr/lib/vmware-vsphere-ui/server/conf/serve
 ui_trace_requests=$( echo "$ui_trace_requests" | awk '{$1=$1};1' )
 if [ -z "$ui_trace_requests" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
-elif [[ "$ui_trace_requests" == *"true"* ]]
+elif [[ "$ui_trace_requests" == *"true"* ]]; then
     echo -e "\e[31mOpen\e[0m"
     echo $ui_trace_requests
 else

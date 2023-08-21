@@ -3,6 +3,8 @@
 #*************Last Updated Jul 27, 2023 v1.1*********************
 #****************************************************************
 
+#20230821
+#Bug fixes
 #20230727
 #Changed V-256385 in accordance with the new STIG released
 
@@ -896,7 +898,7 @@ foreach ($VMhost in (Get-VMHost)) {
     }
 }
 write-host ""
-write-host "------------ V-256386 ------------"
+write-host "------------ V-256436 ------------"
   foreach ($VMhost in (Get-VMHost)) {
     $esxcli3 = Get-EsxCli -v2
     $audit_logging1 = (($esxcli3.system.auditrecords.get.invoke() | Select-Object AuditRecordStorageActive).AuditRecordStorageActive)
@@ -909,7 +911,7 @@ write-host "------------ V-256386 ------------"
     }
 }
 write-host ""
-write-host "------------ V-256387 ------------"
+write-host "------------ V-256437 ------------"
    foreach ($VMhost in (Get-VMHost)) {
      $esxcli4 = Get-EsxCli -v2
      $x509 = (($esxcli4.system.syslog.config.get.invoke() | Select-Object StrictX509Compliance).StrictX509Compliance)

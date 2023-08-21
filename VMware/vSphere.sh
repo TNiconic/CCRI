@@ -1022,7 +1022,7 @@ else
     echo $lookup_symbolic_links
 fi
 echo " "
-echo "------------ V-256721 ------------"
+echo "------------ V-256722 ------------"
 lookup_dirtree_permissions=$(find  /usr/lib/vmware-lookupsvc/lib  /usr/lib/vmware-lookupsvc/conf -xdev -type f -a '(' -perm -o+w -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
 lookup_dirtree_permissions=$( echo "$lookup_dirtree_permissions" | awk '{$1=$1};1' )
 if [  -z "$lookup_dirtree_permissions" ]; then

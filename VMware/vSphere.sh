@@ -2,10 +2,11 @@
 
 #****************************************************************
 #*************Written By Mitchell Gibson USACPB CRIA*************
-#*************Last Updated Aug 16, 2023 v1.0*********************
+#*************Last Updated Nov 15, 2023 v1.0*********************
 #****************************************************************
 
 #Updated August 16, 2023: Bug fixes
+#Updated November 15, 2023; Updated certain STIGs for formatting purposes
 
 clear
 
@@ -325,9 +326,11 @@ echo " "
 echo "------------ V-256669 ------------"
 vami_cipher=$(/opt/vmware/sbin/vami-lighttpd -p -f /opt/vmware/etc/lighttpd/lighttpd.conf 2>/dev/null|grep "ssl\.honor-cipher-order"|sed 's: ::g')
 vami_cipher_output='ssl.honor-cipher-order = "enable"'
+vami_cipher_output_2='ssl.honor-cipher-order ="enable"'
 vami_cipher=$( echo "$vami_cipher" | awk '{$1=$1};1' )
 vami_cipher_output=$( echo "$vami_cipher_output" | awk '{$1=$1};1' )
-if [ "$vami_cipher" = "$vami_cipher_output" ]; then
+vami_cipher_output_2=$( echo "$vami_cipher_output_2" | awk '{$1=$1};1' )
+if [ "$vami_cipher" = "$vami_cipher_output" ] || [ "$vami_cipher" = "$vami_cipher_output_2" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
 else
     echo -e "\e[31mOpen\e[0m"
@@ -4184,9 +4187,14 @@ sts_memory_leak_output=$(cat << EOF
 <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
 EOF
 )
+sts_memory_leak_output_2=$(cat << EOF
+<Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+EOF
+)
 sts_memory_leak=$( echo "$sts_memory_leak" | awk '{$1=$1};1' )
 sts_memory_leak_output=$( echo "$sts_memory_leak_output" | awk '{$1=$1};1' )
-if [ "$sts_memory_leak" = "$sts_memory_leak_output" ]; then
+sts_memory_leak_output_2=$( echo "$sts_memory_leak_output_2" | awk '{$1=$1};1' )
+if [ "$sts_memory_leak" = "$sts_memory_leak_output" ] || [ "$sts_memory_leak" = "$sts_memory_leak_output_2" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
 else
     echo -e "\e[31mOpen\e[0m"
@@ -4617,9 +4625,14 @@ ui_memory_leak_output=$(cat << EOF
 <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
 EOF
 )
+ui_memory_leak_output_2=$(cat << EOF
+<Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+EOF
+)
 ui_memory_leak=$( echo "$ui_memory_leak" | awk '{$1=$1};1' )
 ui_memory_leak_output=$( echo "$ui_memory_leak_output" | awk '{$1=$1};1' )
-if [ "$ui_memory_leak" = "$ui_memory_leak_output" ]; then
+ui_memory_leak_output_2=$( echo "$ui_memory_leak_output_2" | awk '{$1=$1};1' )
+if [ "$ui_memory_leak" = "$ui_memory_leak_output" ] || [ "$ui_memory_leak" = "$ui_memory_leak_output_2" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
 else
     echo -e "\e[31mOpen\e[0m"

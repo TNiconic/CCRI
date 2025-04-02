@@ -2,7 +2,7 @@
 
 #****************************************************************
 #*************Written By Mitchell Gibson USACPB CRIA*************
-#*************Last Updated Aug 6, 2024 v1.0*********************
+#************Last Updated April 4, 2025 v1.0*********************
 #****************************************************************
 
 clear
@@ -26,7 +26,14 @@ echo ----------VMware vSphere 8.0 vCenter Security Technical Implementation Guid
 echo ----------------------------------------------------------------------------
 echo " "
 echo "------------ V-258931 ------------"
-
+appliancesh
+snmp.get
+exit
+echo " If "Enable" is set to "False", this is not a finding.
+If "Enable" is set to "True" and "Authentication" is not set to "SHA1", this is a finding.
+If "Enable" is set to "True" and "Privacy" is not set to "AES128", this is a finding.
+If any "Users" are configured with a "Sec_level" that does not equal "priv", this is a finding. "
+echo " "
 echo " "
 echo " Other checks are performed via the GUI"
 echo -----------------------------------------------------------------------------
@@ -98,7 +105,7 @@ echo " "
 echo "------------ V-259006 ------------"
 esx_logs=$(xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]/@pattern' /usr/lib/vmware-eam/web/conf/server.xml 2>/dev/null)
 esx_logs_output=$(cat << EOF
-pattern="%h %{X-Forwarded-For}i %l %u %t [%I] &quot;%r&quot; %s %b [Processing time %D msec] &quot;%{User-Agent}i&quot;"
+%h %{X-Forwarded-For}i %l %t %u &quot;%r&quot; %s %b
 EOF
 )
 esx_logs=$( echo "$esx_logs" | awk '{$1=$1};1' )
@@ -239,7 +246,7 @@ esx_showserver_output=$(cat << EOF
 <session-timeout>30</session-timeout>
 EOF
 )
-esx_showserver=$( echo "$esx_showserver" | awk '{$1=$1};1' )
+esx_showserver=$(echo "$esx_showserver" | awk '{$1=$1};1' )
 esx_showserver_output=$( echo "$esx_showserver_output" | awk '{$1=$1};1' )
 if [ -z "$esx_showserver" ]; then
     echo -e "\e[31mOpen\e[0m"
@@ -305,8 +312,8 @@ input(type="imfile"
       Facility="local0")
 EOF
 )
-esx_offload=$( echo "$esx_offload" | awk '{$1=$1};1' )
-esx_offload_output=$( echo "$esx_offload_output" | awk '{$1=$1};1' )
+esx_offload=$(echo "$esx_offload" | awk '{$1=$1};1' )
+esx_offload_output=$(echo "$esx_offload_output" | awk '{$1=$1};1' )
 if [ "$esx_offload" = "$esx_offload_output" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
 else
@@ -316,37 +323,192 @@ else
 fi
 echo " "
 echo "------------ V-259017 ------------"
-
+esx_servlet_comply=$(grep STRICT_SERVLET_COMPLIANCE /etc/vmware-eam/catalina.properties)
+esx_servlet_comply_output=$(cat << EOF
+org.apache.catalina.STRICT_SERVLET_COMPLIANCE=tru
+EOF
+)
+esx_servlet_comply=$(echo "$esx_servlet_comply" | awk '{$1=$1};1' )
+esx_servlet_comply_output=$( echo "$esx_servlet_comply_output" | awk '{$1=$1};1' )
+if [ -z "$esx_servlet_comply" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    ((count++))
+    echo "No results found"
+elif [ "$esx_servlet_comply" = "$esx_servlet_comply_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_servlet_comply
+    ((count++))
+fi
 echo " "
 echo "------------ V-259018 ------------"
-
+esx_limit_tcp=$(xmllint --xpath "//Connector[@connectionTimeout = '-1']" /usr/lib/vmware-eam/web/conf/server.xml)
+esx_limit_tcp=$( echo "$esx_limit_tcp" | awk '{$1=$1};1' )
+if [ -z "$esx_limit_tcp" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_limit_tcp
+    ((count++))
+fi
 echo " "
 echo "------------ V-259019 ------------"
-
+esx_keepalive_tcp=$(xmllint --xpath "//Connector[@maxKeepAliveRequests = '-1']" /usr/lib/vmware-eam/web/conf/server.xml)
+esx_keepalive_tcp=$( echo "$esx_keepalive_tcp" | awk '{$1=$1};1' )
+if [ -z "$esx_keepalive_tcp" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_keepalive_tcp
+    ((count++))
+fi
 echo " "
 echo "------------ V-259020 ------------"
-
+esx_char_encoding=$(xmllint --xpath "//*[contains(text(), 'setCharacterEncodingFilter')]/parent::*" /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml)
+esx_char_encoding_output=$(cat << EOF
+<filter-mapping>
+  <filter-name>setCharacterEncodingFilter</filter-name>
+  <url-pattern>/*</url-pattern>
+</filter-mapping>
+<filter>
+  <filter-name>setCharacterEncodingFilter</filter-name>
+  <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-class>
+  <async-supported>true</async-supported>
+  <init-param>
+    <param-name>encoding</param-name>
+    <param-value>UTF-8</param-value>
+  </init-param>
+  <init-param>
+    <param-name>ignore</param-name>
+    <param-value>true</param-value>
+  </init-param>
+</filter>
+EOF
+)
+esx_char_encoding=$( echo "$esx_char_encoding" | awk '{$1=$1};1' )
+esx_char_encoding_output=$( echo "$esx_char_encoding_output" | awk '{$1=$1};1' )
+if [ "$esx_char_encoding" = "$esx_char_encoding_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $esx_char_encoding
+    ((count++))
+fi
 echo " "
 echo "------------ V-259021 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/http-only' -)
+check_output=$(cat << EOF
+<http-only>true</http-only>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259022 ------------"
-
+check=$(xmllint --xpath "//*[contains(text(), 'DefaultServlet')]/parent::*" /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [[ "$check" == *"false"* ]]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
 echo " "
 echo "------------ V-259023 ------------"
-
+check=$(xmllint --xpath "//Server/@port" /usr/lib/vmware-eam/web/conf/server.xml)
+check2=$(grep 'base.shutdown.port' /etc/vmware-eam/catalina.properties)
+check_output1=$(cat << EOF
+port="${base.shutdown.port}"
+EOF
+)
+check_output2=$(cat << EOF
+base.shutdown.port=-1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check2=$( echo "$check2" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output1" ] && [ "$check2" = "$check_output2"]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259024 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '//param-name[text()="debug"]/parent::init-param' -)
+check_output=$(cat << EOF
+<init-param>
+      <param-name>debug</param-name>
+      <param-value>0</param-value>
+</init-param>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259025 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-eam/web/webapps/eam/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '//param-name[text()="listings"]/parent::init-param' -)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [[ "$check" == *"false"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259026 ------------"
-
+check=$(xmllint --xpath "//Host/@deployXML" /usr/lib/vmware-eam/web/conf/server.xml)
+check_output=$(cat << EOF
+deployXML="false"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259027 ------------"
-
+check=$( xmllint --xpath "//Host/@deployXML" /usr/lib/vmware-eam/web/conf/server.xml)
+check_output=$(cat << EOF
+deployXML="false"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259028 ------------"
 

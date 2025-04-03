@@ -325,7 +325,7 @@ echo " "
 echo "------------ V-259017 ------------"
 esx_servlet_comply=$(grep STRICT_SERVLET_COMPLIANCE /etc/vmware-eam/catalina.properties)
 esx_servlet_comply_output=$(cat << EOF
-org.apache.catalina.STRICT_SERVLET_COMPLIANCE=tru
+org.apache.catalina.STRICT_SERVLET_COMPLIANCE=true
 EOF
 )
 esx_servlet_comply=$(echo "$esx_servlet_comply" | awk '{$1=$1};1' )
@@ -441,6 +441,7 @@ if [ "$check" = "$check_output1" ] && [ "$check2" = "$check_output2"]; then
 else
     echo -e "\e[31mOpen\e[0m"
     echo $check
+    echo $check2
     ((count++))
 fi
 echo " "
@@ -511,81 +512,415 @@ else
 fi
 echo " "
 echo "------------ V-259028 ------------"
-
+check=$(xmllint --xpath "//Connector/@xpoweredBy" /usr/lib/vmware-eam/web/conf/server.xml)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [[ "$check" == *"false"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259029 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/examples)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259030 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/ROOT)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259031 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/docs)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259032 ------------"
-
+check=$(find /usr/lib/vmware-eam/web/ -xdev -type f -a '(' -perm -o+w -o -not -user root -o -not -group root ')' -exec ls -ld {} \;)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259033 ------------"
-
+check=$(grep ALLOW_BACKSLASH /etc/vmware-eam/catalina.properties)
+check_output=$(cat << EOF
+org.apache.catalina.connector.ALLOW_BACKSLASH=false
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259034 ------------"
-
+check=$(grep ENFORCE_ENCODING_IN_GET_WRITER /etc/vmware-eam/catalina.properties)
+check_output=$(cat << EOF
+org.apache.catalina.connector.response.ENFORCE_ENCODING_IN_GET_WRITER=true
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259035 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/manager)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259036 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/host-manager)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo -----------------------------------------------------------------
 echo ----------VMware vSphere 8.0 Envoy Technical Implementation Guide
 echo -----------------------------------------------------------------
 echo " "
 echo "------------ V-259161 ------------"
-
+check=$(find /var/log/vmware/rhttpproxy/ -xdev -type f -a '(' -perm -o+w -o -not -user rhttpproxy -o -not -group rhttpproxy ')' -exec ls -ld {} \;)
+check2=$(find /var/log/vmware/envoy/ -xdev -type f -a '(' -perm -o+w -o -not -user envoy -o -not -group envoy ')' -exec ls -ld {} \;)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check2=$( echo "$check2" | awk '{$1=$1};1' )
+if [ -z "$check" ] && [ -z "$check2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    echo $check2
+    ((count++))
+fi
 echo " "
 echo "------------ V-259162 ------------"
-
+check=$(stat -c "%n permissions are %a, is owned by %U and group owned by %G" /etc/vmware-rhttpproxy/ssl/rui.key)
+check_output=$(cat << EOF
+/etc/vmware-rhttpproxy/ssl/rui.key permissions are 600, is owned by rhttpproxy and group owned by rhttpproxy
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259163 ------------"
-
+check=$(cat /etc/vmware-syslog/vmware-services-rhttpproxy.conf)
+check_output=$(cat << EOF
+#rhttpproxy log
+input(type="imfile"
+      File="/var/log/vmware/rhttpproxy/rhttpproxy.log"
+      Tag="rhttpproxy-main"
+      Severity="info"
+      Facility="local0")
+#rhttpproxy init stdout
+input(type="imfile"
+      File="/var/log/vmware/rhttpproxy/rproxy_init.log.stdout"
+      Tag="rhttpproxy-stdout"
+      Severity="info"
+      Facility="local0")
+#rhttpproxy init stderr
+input(type="imfile"
+      File="/var/log/vmware/rhttpproxy/rproxy_init.log.stderr"
+      Tag="rhttpproxy-stderr"
+      Severity="info"
+      Facility="local0")
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259164 ------------"
-
+check=$(cat /etc/vmware-syslog/vmware-services-envoy.conf)
+check_output=$(cat << EOF
+#envoy service log
+input(type="imfile"
+      File="/var/log/vmware/envoy/envoy.log"
+      Tag="envoy-main"
+      Severity="info"
+      Facility="local0")
+#envoy access log
+input(type="imfile"
+      File="/var/log/vmware/envoy/envoy-access.log"
+      Tag="envoy-access"
+      Severity="info"
+      Facility="local0")
+#envoy init stdout
+input(type="imfile"
+      File="/var/log/vmware/envoy/envoy_init.log.stdout"
+      Tag="envoy-stdout"
+      Severity="info"
+      Facility="local0")
+#envoy init stderr
+input(type="imfile"
+      File="/var/log/vmware/envoy/envoy_init.log.stderr"
+      Tag="envoy-stderr"
+      Severity="info"
+      Facility="local0")
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259165 ------------"
-
+check=$( xmllint --xpath '/config/envoy/L4Filter/maxRemoteHttpsConnections/text()' /etc/vmware-rhttpproxy/config.xml)
+check2=$(xmllint --xpath '/config/envoy/L4Filter/maxRemoteHttpConnections/text()' /etc/vmware-rhttpproxy/config.xml)
+check_output1=$(cat << EOF
+2048
+EOF
+)
+check_output2=$(cat << EOF
+2048
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check2=$( echo "$check2" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output1" ] && [ "$check2" = "$check_output2"]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$check" ] && [ -z "$check2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    echo $check2
+    ((count++))
+fi
 echo " "
 echo --------------------------------------------------------------------------
 echo ----------VMware vSphere 8.0 Lookup Service Technical Implementation Guide
 echo --------------------------------------------------------------------------
 echo " "
 echo "------------ V-259037 ------------"
-
+check=$(xmllint --xpath '/Server/Service/Executor[@name="tomcatThreadPool"]/@maxThreads' /usr/lib/vmware-lookupsvc/conf/server.xml)
+check_output=$(cat << EOF
+maxThreads="300"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259038 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-lookupsvc/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/secure' -)
+check_output=$(cat << EOF
+<secure>true</secure>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259039 ------------"
-
+check=$(grep StreamRedirectFile /etc/vmware/vmware-vmon/svcCfgfiles/lookupsvc.json)
+check_output=$(cat << EOF
+"StreamRedirectFile": "%VMWARE_LOG_DIR%/vmware/lookupsvc/lookupsvc_stream.log",
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    echo "Check if there is output behind "StremRedirectFile:" if there is this is NF"
+    ((count++))
+fi
 echo " "
 echo "------------ V-259040 ------------"
+check=$(xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]/@pattern' /usr/lib/vmware-lookupsvc/conf/server.xml)
+check_elements() {
+  local input_string="$1"
+  local elements=("%h" "%{X-Forwarded-For}i" "%l" "%t" "%u" "\"%r\"" "%s" "%b")
+  local all_present=true
+  for element in "${elements[@]}"; do
+    if [[ ! "$input_string" == *"$element"* ]]; then
+      all_present=false
+      break
+    fi
+  done
 
+  if [ "$all_present" = true ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+check_output=$(cat << EOF
+pattern="%t %I [Request] &quot;%{User-Agent}i&quot; %{X-Forwarded-For}i/%h:%{remote}p %l %u to local %{local}p - &quot;%r&quot; %H %m %U%q    [Response] %s - %b bytes    [Perf] process %Dms / commit %Fms / conn [%X]"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif check_elements "$check"; then
+    echo -e "\e[32mNot a Finding\e[0m"  
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259041 ------------"
-
+check=$(find /var/log/vmware/lookupsvc/ -xdev ! -name lookupsvc-init.log ! -name lookupsvc-prestart.log -type f -a '(' -perm -o+w -o -not -user lookupsvc -o -not -group lookupsvc ')' -exec ls -ld {} \;)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259042 ------------"
-
+check=$(xmllint --xpath '/Server/Listener[@className="org.apache.catalina.security.SecurityListener"]' /usr/lib/vmware-lookupsvc/conf/server.xml)
+check_output=$(cat << EOF
+<Listener className="org.apache.catalina.security.SecurityListener"/>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    umask_value=$(xmllint --xpath 'string(/Server/Listener[@className="org.apache.catalina.security.SecurityListener"]/@minimumUmask)' /usr/lib/vmware-lookupsvc/conf/server.xml)
+    if [ -z "$umask_value" ]; then
+        echo -e "\e[31mOpen\e[0m"
+        echo $check
+        ((count++))
+    elif [ "$umask_value" != "0007" ]; then
+        echo -e "\e[31mOpen\e[0m"
+        echo $check
+        ((count++))
+    else
+        echo -e "\e[32mNot a Finding\e[0m"
+    fi
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259043 ------------"
-
+check=$(xmllint --xpath "//Connector[@allowTrace = 'true']" /usr/lib/vmware-lookupsvc/conf/server.xml)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259044 ------------"
-
+check=$(xmllint --xpath "//Connector[(@port = '0') or not(@address)]" /usr/lib/vmware-lookupsvc/conf/server.xml)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259045 ------------"
-
+check=$(grep RECYCLE_FACADES /usr/lib/vmware-lookupsvc/conf/catalina.properties)
+check_output=$(cat << EOF
+org.apache.catalina.connector.RECYCLE_FACADES=true
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259046 ------------"
 

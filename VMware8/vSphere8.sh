@@ -1400,31 +1400,166 @@ else
 fi
 echo " "
 echo "------------ V-259072 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-perfcharts/tc-instance/webapps/statsreport/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/secure' - 2>/dev/null)
+check_output=$(cat << EOF
+<secure>true</secure>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259073 ------------"
-
+chekc=$(grep StreamRedirectFile /etc/vmware/vmware-vmon/svcCfgfiles/perfcharts.json)
+check_output=$(cat << EOF
+"StreamRedirectFile" : "%VMWARE_LOG_DIR%/vmware/perfcharts/vmware-perfcharts-runtime.log",
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check_session
+    echo "Check if there is output behind "StremRedirectFile:" if there is this is NF"
+    ((count++))
+fi
 echo " "
 echo "------------ V-259074 ------------"
+check=$(xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.AccessLogValve"]/@pattern' /usr/lib/vmware-perfcharts/tc-instance/conf/server.xml)
+check_elements() {
+  local input_string="$1"
+  local elements=("%h" "%{X-Forwarded-For}i" "%l" "%t" "%u" "\"%r\"" "%s" "%b")
+  local all_present=true
+  for element in "${elements[@]}"; do
+    if [[ ! "$input_string" == *"$element"* ]]; then
+      all_present=false
+      break
+    fi
+  done
 
+  if [ "$all_present" = true ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+check_output=$(cat << EOF
+pattern="%h %{X-Forwarded-For}i %l %u %t &quot;%r&quot; %s %b &quot;%{User-Agent}i&quot;"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif check_elements "$check"; then
+    echo -e "\e[32mNot a Finding\e[0m"  
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259075 ------------"
-
+check=$( find /var/log/vmware/perfcharts/ -xdev -type f -a '(' -perm -o+w -o -not -user perfcharts -o -not -group users ')' -exec ls -ld {} \; 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259076 ------------"
-
+check=$(xmllint --xpath '/Server/Listener[@className="org.apache.catalina.security.SecurityListener"]' /usr/lib/vmware-perfcharts/tc-instance/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+<Listener className="org.apache.catalina.security.SecurityListener"/>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    umask_value=$(xmllint --xpath 'string(/Server/Listener[@className="org.apache.catalina.security.SecurityListener"]/@minimumUmask)' /usr/lib/vmware-lookupsvc/conf/server.xml)
+    if [ -z "$umask_value" ]; then
+        echo -e "\e[31mOpen\e[0m"
+        echo $check
+        ((count++))
+    elif [ "$umask_value" != "0007" ]; then
+        echo -e "\e[31mOpen\e[0m"
+        echo $check
+        ((count++))
+    else
+        echo -e "\e[32mNot a Finding\e[0m"
+    fi
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259077 ------------"
-
+check=$( xmllint --xpath "//Connector[@allowTrace = 'true']" /usr/lib/vmware-perfcharts/tc-instance/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259078 ------------"
-
+check=$( xmllint --xpath "//Connector[(@port = '0') or not(@address)]" /usr/lib/vmware-perfcharts/tc-instance/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259079 ------------"
-
+check=$(grep RECYCLE_FACADES /usr/lib/vmware-perfcharts/tc-instance/conf/catalina.properties 2>/dev/null)
+check_output=$(cat << EOF
+org.apache.catalina.connector.RECYCLE_FACADES=true
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259080 ------------"
-
+check=$(grep EXIT_ON_INIT_FAILURE /usr/lib/vmware-perfcharts/tc-instance/conf/catalina.properties 2>/dev/null)
+check_output=$(cat << EOF
+org.apache.catalina.startup.EXIT_ON_INIT_FAILURE=true
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259081 ------------"
 

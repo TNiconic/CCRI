@@ -1562,7 +1562,15 @@ else
 fi
 echo " "
 echo "------------ V-259081 ------------"
-
+check=$(xmllint --xpath "//Connector[@URIEncoding != 'UTF-8'] | //Connector[not[@URIEncoding]]" /usr/lib/vmware-perfcharts/tc-instance/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259082 ------------"
 
@@ -1571,22 +1579,128 @@ echo "------------ V-259083 ------------"
 
 echo " "
 echo "------------ V-259084 ------------"
-
+check=$(cat /etc/vmware-syslog/vmware-services-perfcharts.conf 2>/dev/null)
+check_output=$(cat << EOF
+#stats
+input(type="imfile"
+      File="/var/log/vmware/perfcharts/stats.log"
+      Tag="perfcharts-stats"
+      Severity="info"
+      Facility="local0")
+#localhost_access_log
+input(type="imfile"
+      File="/var/log/vmware/perfcharts/localhost_access_log.txt"
+      Tag="perfcharts-localhost_access"
+      Severity="info"
+      Facility="local0")
+#vmware-perfcharts-gc.log
+input(type="imfile"
+      File="/var/log/vmware/perfcharts/vmware-perfcharts-gc.log.*.current"
+      Tag="perfcharts-gc"
+      Severity="info"
+      Facility="local0")
+#vmware-perfcharts-runtime.log
+input(type="imfile"
+      File="/var/log/vmware/perfcharts/vmware-perfcharts-runtime.log.std*"
+      Tag="perfcharts-runtime"
+      Severity="info"
+      Facility="local0")
+#tomcat/catalina_log
+input(type="imfile"
+      File="/var/log/vmware/perfcharts/tomcat/catalina.*.log"
+      Tag="perfcharts-tomcat-catalina"
+      Severity="info"
+      Facility="local0")
+#tomcat/localhost_log
+input(type="imfile"
+      File="/var/log/vmware/perfcharts/tomcat/localhost.*.log"
+      Tag="perfcharts-tomcat-localhost"
+      Severity="info"
+      Facility="local0")
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259085 ------------"
 
 echo " "
 echo "------------ V-259086 ------------"
-
+check=$(xmllint --xpath "//Connector[@connectionTimeout = '-1']" /usr/lib/vmware-perfcharts/tc-instance/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259087 ------------"
-
+check=$(xmllint --xpath "//Connector[@maxKeepAliveRequests = '-1']" /usr/lib/vmware-perfcharts/tc-instance/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259088 ------------"
-
+check=$(xmllint --xpath "//*[contains(text(), 'setCharacterEncodingFilter')]/parent::*" /usr/lib/vmware-perfcharts/tc-instance/webapps/statsreport/WEB-INF/web.xml 2>/dev/null)
+check_output=$(cat << EOF
+<filter-mapping>
+  <filter-name>setCharacterEncodingFilter</filter-name>
+  <url-pattern>/*</url-pattern>
+</filter-mapping>
+<filter>
+  <filter-name>setCharacterEncodingFilter</filter-name>
+  <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-class>
+  <async-supported>true</async-supported>
+  <init-param>
+    <param-name>encoding</param-name>
+    <param-value>UTF-8</param-value>
+  </init-param>
+  <init-param>
+    <param-name>ignore</param-name>
+    <param-value>true</param-value>
+  </init-param>
+</filter>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259089 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-perfcharts/tc-instance/webapps/statsreport/WEB-INF/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/http-only' - 2>/dev/null)
+check_output=$(cat << EOF
+<http-only>true</http-only>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259090 ------------"
 
@@ -1601,22 +1715,72 @@ echo "------------ V-259093 ------------"
 
 echo " "
 echo "------------ V-259094 ------------"
-
+check=$(xmllint --xpath "//Host/@deployXML" /usr/lib/vmware-perfcharts/tc-instance/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+deployXML="false"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259095 ------------"
-
+check=$(xmllint --xpath "//Host/@autoDeploy" /usr/lib/vmware-perfcharts/tc-instance/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+autoDeploy="false"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259096 ------------"
 
 echo " "
 echo "------------ V-259097 ------------"
-
+check=$(ls -l /usr/lib/vmware-perfcharts/tc-instance/webapps/examples 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259098 ------------"
-
+check=$(ls -l /usr/lib/vmware-perfcharts/tc-instance/webapps/docs 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259099 ------------"
-
+check=$(find /usr/lib/vmware-perfcharts/ -xdev -type f -a '(' -perm -o+w -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259100 ------------"
 
@@ -1625,10 +1789,26 @@ echo "------------ V-259101 ------------"
 
 echo " "
 echo "------------ V-259102 ------------"
-
+check=$(ls -l /usr/lib/vmware-perfcharts/tc-instance/webapps/manager 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259103 ------------"
-
+check=$(ls -l /usr/lib/vmware-perfcharts/tc-instance/webapps/host-manager 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo -------------------------------------------------------------------------
 echo ----------VMware vSphere 8.0 Photon OS 4.0 Technical Implementation Guide
@@ -1963,7 +2143,15 @@ echo "------------ V-259167 ------------"
 
 echo " "
 echo "------------ V-259168 ------------"
-
+check=$(find /storage/db/vpostgres/*conf* -xdev -type f -a '(' -not -perm 600 -o -not -user vpostgres -o -not -group vpgmongrp ')' -exec ls -ld {} \; 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259169 ------------"
 
@@ -1975,56 +2163,259 @@ echo "------------ V-259171 ------------"
 
 echo " "
 echo "------------ V-259172 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW log_file_mode;" 2>/dev/null)
+check_output=$(cat << EOF
+0600
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259173 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "select * from pg_extension where extname != 'plpgsql'" 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259174 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW port;" 2>/dev/null)
+check_output=$(cat << EOF
+5432
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259175 ------------"
-
+check=$(grep -v "^#" /storage/db/vpostgres/pg_hba.conf |grep '\S' 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259176 ------------"
-
-echo " "
-echo "------------ V-259177 ------------"
-
-echo " "
-echo "------------ V-259178 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW password_encryption;" 2>/dev/null)
+check_output=$(cat << EOF
+scram-sha-256
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259179 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SELECT name,setting FROM pg_settings WHERE name IN ('fsync','full_page_writes','synchronous_commit');" 2>/dev/null)
+check_output=$(cat << EOF
+fsync              | on
+full_page_writes   | on
+synchronous_commit | on
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259180 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW client_min_messages;" 2>/dev/null)
+check_output=$(cat << EOF
+error
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259181 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW logging_collector;" 2>/dev/null)
+check_output=$(cat << EOF
+on
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259182 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW log_timezone;" 2>/dev/null)
+check_output=$(cat << EOF
+UTC
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259183 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW log_connections;" 2>/dev/null)
+check_output=$(cat << EOF
+on
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259184 ------------"
-
+check=$(/opt/vmware/vpostgres/current/bin/psql -U postgres -A -t -c "SHOW log_disconnections;" 2>/dev/null)
+check_output=$(cat << EOF
+on
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259185 ------------"
-
+check=$(cat /etc/vmware-syslog/vmware-services-vmware-vpostgres.conf 2>/dev/null)
+check2=$(cat /etc/vmware-syslog/vmware-services-vmware-postgres-archiver.conf 2>/dev/null)
+check_output=$(cat << EOF
+# vmware-vpostgres first logs stdout, before loading configuration
+input(type="imfile"
+      File="/var/log/vmware/vpostgres/serverlog.stdout"
+      Tag="vpostgres-first"
+      Severity="info"
+      Facility="local0")
+# vmware-vpostgres first logs stderr, before loading configuration
+input(type="imfile"
+      File="/var/log/vmware/vpostgres/serverlog.stderr"
+      Tag="vpostgres-first"
+      Severity="info"
+      Facility="local0")
+# vmware-vpostgres logs
+input(type="imfile"
+      File="/var/log/vmware/vpostgres/postgresql-*.log"
+      Tag="vpostgres"
+      Severity="info"
+      Facility="local0")
+EOF
+)
+check_output2=$(cat << EOF
+# vmware-postgres-archiver stdout log
+input(type="imfile"
+      File="/var/log/vmware/vpostgres/pg_archiver.log.stdout"
+      Tag="postgres-archiver"
+      Severity="info"
+      Facility="local0")
+# vmware-postgres-archiver stderr log
+input(type="imfile"
+      File="/var/log/vmware/vpostgres/pg_archiver.log.stderr"
+      Tag="postgres-archiver"
+      Severity="info"
+      Facility="local0")
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check2=$( echo "$check2" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ] && [ "$check2" = "$check_output2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo --------------------------------------------------------------------------------
 echo ----------VMware vSphere 8.0 Secure Token Service Technical Implementation Guide
 echo --------------------------------------------------------------------------------
 echo " "
 echo "------------ V-258970 ------------"
-
+check=$(xmllint --xpath '/Server/Service/Executor[@name="tomcatThreadPool"]/@maxThreads' /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+maxThreads="150"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258972 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/secure' - 2>/dev/null)
+check_output=$(cat << EOF
+<secure>true</secure>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258973 ------------"
 
@@ -2033,46 +2424,338 @@ echo "------------ V-258974 ------------"
 
 echo " "
 echo "------------ V-258975 ------------"
-
+check=$(find /var/log/vmware/sso/ -xdev ! -name lookupsvc-init.log ! -name sts-prestart.log -type f -a '(' -perm -o+w -o -not -user sts -o -not -group lwis ')' -exec ls -ld {} \; 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258976 ------------"
 
 echo " "
 echo "------------ V-258977 ------------"
-
+check=$(xmllint --xpath "//Connector[@allowTrace = 'true']" /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258978 ------------"
-
+check=$(xmllint --xpath '//Connector[not(@port = "${bio-ssl-clientauth.https.port}") and (@port = "0" or not(@address))]' /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258979 ------------"
 
 echo " "
 echo "------------ V-258980 ------------"
-
+check=$(grep EXIT_ON_INIT_FAILURE /usr/lib/vmware-sso/vmware-sts/conf/catalina.properties 2>/dev/null)
+check_output=$(cat << EOF
+org.apache.catalina.startup.EXIT_ON_INIT_FAILURE=true
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258981 ------------"
-
+check=$(xmllint --xpath "//Connector[@URIEncoding != 'UTF-8'] | //Connector[not[@URIEncoding]]" /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258982 ------------"
-
+check=$(xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.ErrorReportValve"]' /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+<Valve className="org.apache.catalina.valves.ErrorReportValve" showServerInfo="false" showReport="false"/>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258983 ------------"
 
 echo " "
 echo "------------ V-258984 ------------"
-
+check=$(cat /etc/vmware-syslog/vmware-services-sso-services.conf 2>/dev/null)
+check_output=$(cat << EOF
+#vmidentity logs
+input(type="imfile"
+      File="/var/log/vmware/sso/activedirectoryservice.log"
+      Tag="activedirectoryservice"
+      PersistStateInterval="200"
+      Severity="info"
+      startmsg.regex="^[[:digit:]]{4}-[[:digit:]]{1,2}-[[:digit:]]{1,2}T[[:digit:]]{1,2}:[[:digit:]]{1,2}:[[:digit:]]{1,2}.[[:digit:]]{0,3}Z"
+      Facility="local0")
+input(type="imfile"
+      File="/var/log/vmware/sso/lookupsvc-init.log"
+      Tag="ssolookupsvc-init"
+      PersistStateInterval="200"
+      Severity="info"
+      startmsg.regex="^[[:digit:]]{4}-[[:digit:]]{1,2}-[[:digit:]]{1,2}T[[:digit:]]{1,2}:[[:digit:]]{1,2}:[[:digit:]]{1,2}.[[:digit:]]{0,3}Z"
+      Facility="local0")
+input(type="imfile"
+      File="/var/log/vmware/sso/openidconnect.log"
+      Tag="openidconnect"
+      PersistStateInterval="200"
+      Severity="info"
+      startmsg.regex="^[[:digit:]]{4}-[[:digit:]]{1,2}-[[:digit:]]{1,2}T[[:digit:]]{1,2}:[[:digit:]]{1,2}:[[:digit:]]{1,2}.[[:digit:]]{0,3}Z"
+      Facility="local0")
+input(type="imfile"
+      File="/var/log/vmware/sso/ssoAdminServer.log"
+      Tag="ssoadminserver"
+      PersistStateInterval="200"
+      Severity="info"
+      startmsg.regex="^[[:digit:]]{4}-[[:digit:]]{1,2}-[[:digit:]]{1,2}T[[:digit:]]{1,2}:[[:digit:]]{1,2}:[[:digit:]]{1,2}.[[:digit:]]{0,3}Z"
+      Facility="local0")
+input(type="imfile"
+      File="/var/log/vmware/sso/svcaccountmgmt.log"
+      Tag="svcaccountmgmt"
+      PersistStateInterval="200"
+      Severity="info"
+      startmsg.regex="^[[:digit:]]{4}-[[:digit:]]{1,2}-[[:digit:]]{1,2}T[[:digit:]]{1,2}:[[:digit:]]{1,2}:[[:digit:]]{1,2}.[[:digit:]]{0,3}Z"
+      Facility="local0")
+input(type="imfile"
+      File="/var/log/vmware/sso/tokenservice.log"
+      Tag="tokenservice"
+      PersistStateInterval="200"
+      Severity="info"
+      startmsg.regex="^[[:digit:]]{4}-[[:digit:]]{1,2}-[[:digit:]]{1,2}T[[:digit:]]{1,2}:[[:digit:]]{1,2}:[[:digit:]]{1,2}.[[:digit:]]{0,3}Z"
+      Facility="local0")
+#sts health log
+input(type="imfile"
+      File="/var/log/vmware/sso/sts-health-status.log"
+      Tag="sts-health-status"
+      PersistStateInterval="200"
+      Severity="info"
+      startmsg.regex="^[[:digit:]]{4}-[[:digit:]]{1,2}-[[:digit:]]{1,2} [[:digit:]]{1,2}:[[:digit:]]{1,2}:[[:digit:]]{1,2},[[:digit:]]{0,4}"
+      Facility="local0")
+#sts runtime log stdout
+input(type="imfile"
+      File="/var/log/vmware/sso/sts-runtime.log.stdout"
+      Tag="sts-runtime-stdout"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#sts runtime log stderr
+input(type="imfile"
+      File="/var/log/vmware/sso/sts-runtime.log.stderr"
+      Tag="sts-runtime-stderr"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#gclogFile.0.current log
+input(type="imfile"
+      File="/var/log/vmware/sso/gclogFile.*.current"
+      Tag="gclog"
+      PersistStateInterval="200"
+      Severity="info"
+      startmsg.regex="^[[:digit:]]{4}-[[:digit:]]{1,2}-[[:digit:]]{1,2}T[[:digit:]]{1,2}:[[:digit:]]{1,2}:[[:digit:]]{1,2}.[[:digit:]]{0,3}+[[:digit:]]{0,4}"
+      Facility="local0")
+#identity sts default
+input(type="imfile"
+      File="/var/log/vmware/sso/vmware-identity-sts-default.log"
+      Tag="sso-identity-sts-default"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#identity sts
+input(type="imfile"
+      File="/var/log/vmware/sso/vmware-identity-sts.log"
+      Tag="sso-identity-sts"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#identity perf
+input(type="imfile"
+      File="/var/log/vmware/sso/vmware-identity-sts-perf.log"
+      Tag="sso-identity-perf"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#identity prestart
+input(type="imfile"
+      File="/var/log/vmware/sso/sts-prestart.log"
+      Tag="sso-identity-prestart"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#rest idm
+input(type="imfile"
+      File="/var/log/vmware/sso/vmware-rest-idm.log"
+      Tag="sso-rest-idm"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#rest vmdir
+input(type="imfile"
+      File="/var/log/vmware/sso/vmware-rest-vmdir.log"
+      Tag="sso-rest-vmdir"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#rest afd
+input(type="imfile"
+      File="/var/log/vmware/sso/vmware-rest-afd.log"
+      Tag="sso-rest-afd"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#websso
+input(type="imfile"
+      File="/var/log/vmware/sso/websso.log"
+      Tag="sso-websso"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#tomcat catalina
+input(type="imfile"
+      File="/var/log/vmware/sso/tomcat/catalina.*.log"
+      Tag="sso-tomcat-catalina"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#tomcat localhost
+input(type="imfile"
+      File="/var/log/vmware/sso/tomcat/localhost.*.log"
+      Tag="sso-tomcat-localhost"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#tomcat localhost access
+input(type="imfile"
+      File="/var/log/vmware/sso/tomcat/localhost_access.log"
+      Tag="sso-tomcat-localhost-access"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#vmdir log
+input(type="imfile"
+      File="/var/log/vmware/vmdir/*.log"
+      Tag="vmdir"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+#vmafd log
+input(type="imfile"
+      File="/var/log/vmware/vmafd/*.log"
+      Tag="vmafd"
+      PersistStateInterval="200"
+      Severity="info"
+      Facility="local0")
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258985 ------------"
-
+check=$(xmllint --xpath "//Connector[@connectionTimeout = '-1']" /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258986 ------------"
-
+check=$(xmllint --xpath "//Connector[@maxKeepAliveRequests = '-1']" /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258987 ------------"
-
+check=$(xmllint --xpath "//*[contains(text(), 'setCharacterEncodingFilter')]/parent::*" /usr/lib/vmware-sso/vmware-sts/conf/web.xml 2>/dev/null)
+check_output=$(cat << EOF
+<filter-mapping>
+  <filter-name>setCharacterEncodingFilter</filter-name>
+  <url-pattern>/*</url-pattern>
+</filter-mapping>
+<filter>
+  <filter-name>setCharacterEncodingFilter</filter-name>
+  <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-class>
+  <async-supported>true</async-supported>
+  <init-param>
+    <param-name>encoding</param-name>
+    <param-value>UTF-8</param-value>
+  </init-param>
+  <init-param>
+    <param-name>ignore</param-name>
+    <param-value>true</param-value>
+  </init-param>
+</filter>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258988 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-sso/vmware-sts/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/http-only' - 2>/dev/null)
+check_output=$(cat << EOF
+<http-only>true</http-only>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258989 ------------"
 
@@ -2087,22 +2770,67 @@ echo "------------ V-258992 ------------"
 
 echo " "
 echo "------------ V-258993 ------------"
-
+check=$(xmllint --xpath "//Host/@autoDeploy" /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+autoDeploy="false"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258994 ------------"
 
 echo " "
 echo "------------ V-258995 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/examples 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258996 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/ROOT 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258997 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/docs 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258998 ------------"
-
+check=$(find /usr/lib/vmware-sso/ -xdev -type f -a '(' -perm -o+w -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258999 ------------"
 
@@ -2111,23 +2839,78 @@ echo "------------ V-259000 ------------"
 
 echo " "
 echo "------------ V-259001 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/manager 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259002 ------------"
-
+check=$(ls -l /var/opt/apache-tomcat/webapps/host-manager 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-266136 ------------"
-
+check=$(xmllint --xpath "//Host/@deployXML" /usr/lib/vmware-sso/vmware-sts/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+deployXML="false"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo --------------------------------------------------------------------------
 echo ----------VMware vSphere 8.0 User Interface Technical Implementation Guide
 echo --------------------------------------------------------------------------
 echo " "
 echo "------------ V-259104 ------------"
-
+check=$(xmllint --xpath '/Server/Service/Connector[@port="${http.port}"]/@maxThreads' /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+maxThreads="800"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259105 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/secure' - 2>/dev/null)
+check_output=$(cat << EOF
+<secure>true</secure>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259106 ------------"
 
@@ -2136,49 +2919,322 @@ echo "------------ V-259107 ------------"
 
 echo " "
 echo "------------ V-259108 ------------"
-
+check=$(find /var/log/vmware/vsphere-ui/ -xdev -type f -a '(' -perm -o+w -o -not -user vsphere-ui -o -not -group users -a -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259109 ------------"
 
 echo " "
 echo "------------ V-259110 ------------"
-
+check=$(xmllint --xpath "//Connector[@allowTrace = 'true']" /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259111 ------------"
-
+check=$(xmllint --xpath "//Connector[(@port = '0') or not(@address)]" /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259112 ------------"
 
 echo " "
 echo "------------ V-259113 ------------"
-
+check=$(grep EXIT_ON_INIT_FAILURE /usr/lib/vmware-vsphere-ui/server/conf/catalina.properties 2>/dev/null)
+check_output=$(cat << EOF
+org.apache.catalina.startup.EXIT_ON_INIT_FAILURE=true
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259114 ------------"
-
+check=$(xmllint --xpath "//Connector[@URIEncoding != 'UTF-8'] | //Connector[not[@URIEncoding]]" /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259115 ------------"
-
+check=$(xmllint --xpath '/Server/Service/Engine/Host/Valve[@className="org.apache.catalina.valves.ErrorReportValve"]' /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+<Valve className="org.apache.catalina.valves.ErrorReportValve" showServerInfo="false" showReport="false"/>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259116 ------------"
 
 echo " "
 echo "------------ V-259117 ------------"
-
+check=$(cat /etc/vmware-syslog/vmware-services-vsphere-ui.conf 2>/dev/null)
+check_output=$(cat << EOF
+#vsphere-ui main log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/vsphere_client_virgo.log"
+      Tag="ui-main"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui change log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/changelog.log"
+      Tag="ui-changelog"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui dataservice log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/dataservice.log"
+      Tag="ui-dataservice"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui apigw log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/apigw.log"
+      Tag="ui-apigw"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui equinox log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/equinox.log"
+      Tag="ui-equinox"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui event log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/eventlog.log"
+      Tag="ui-eventlog"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui op id log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/opId.log"
+      Tag="ui-opid"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui performance audit log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/performanceAudit.log"
+      Tag="ui-performanceAudit"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui plugin-medic log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/plugin-medic.log"
+      Tag="ui-plugin-medic"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui threadmonitor log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/threadmonitor.log"
+      Tag="ui-threadmonitor"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui threadpools log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/threadpools.log"
+      Tag="ui-threadpools"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui vspheremessaging log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/vspheremessaging.log"
+      Tag="ui-vspheremessaging"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui rpm log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/vsphere-ui-rpm.log"
+      Tag="ui-rpm"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui runtime log stdout
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/vsphere-ui-runtime.log*"
+      Tag="ui-runtime-stdout"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui runtime log stderr
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/vsphere-ui-runtime.log*"
+      Tag="ui-runtime-stderr"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui access log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/access/localhost_access_log.txt"
+      Tag="ui-access"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui gc log
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/vsphere-ui-gc*"
+      Tag="ui-gc"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui firstboot log
+input(type="imfile"
+      File="/var/log/firstboot/vsphere_ui_firstboot*"
+      Tag="ui-firstboot"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui catalina
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/catalina.*.log"
+      Tag="ui-runtime-catalina"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui endpoint
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/endpoint.log"
+      Tag="ui-runtime-endpoint"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui localhost
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/localhost.*.log"
+      Tag="ui-runtime-localhost"
+      Severity="info"
+      Facility="local0")
+#vsphere-ui vsan
+input(type="imfile"
+      File="/var/log/vmware/vsphere-ui/logs/vsan-plugin.log"
+      Tag="ui-runtime-vsan"
+      Severity="info"
+      Facility="local0")
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259118 ------------"
-
+check=$(grep STRICT_SERVLET_COMPLIANCE /usr/lib/vmware-vsphere-ui/server/conf/catalina.properties 2>/dev/null)
+check_output=$(cat << EOF
+org.apache.catalina.STRICT_SERVLET_COMPLIANCE=true
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259119 ------------"
-
+check=$(xmllint --xpath "//Connector[@connectionTimeout = '-1']" /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259120 ------------"
-
+check=$(xmllint --xpath "//Connector[@maxKeepAliveRequests = '-1']" /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259121 ------------"
-
+check=$(xmllint --xpath "//*[contains(text(), 'setCharacterEncodingFilter')]/parent::*" /usr/lib/vmware-vsphere-ui/server/conf/web.xml 2>/dev/null)
+check_output=$(cat << EOF
+<filter-mapping>
+  <filter-name>setCharacterEncodingFilter</filter-name>
+  <url-pattern>/*</url-pattern>
+</filter-mapping>
+<filter>
+  <filter-name>setCharacterEncodingFilter</filter-name>
+  <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-class>
+  <async-supported>true</async-supported>
+  <init-param>
+    <param-name>encoding</param-name>
+    <param-value>UTF-8</param-value>
+  </init-param>
+  <init-param>
+    <param-name>ignore</param-name>
+    <param-value>true</param-value>
+  </init-param>
+</filter>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259122 ------------"
-
+check=$(xmllint --format /usr/lib/vmware-vsphere-ui/server/conf/web.xml | sed 's/xmlns=".*"//g' | xmllint --xpath '/web-app/session-config/cookie-config/http-only' - 2>/dev/null)
+check_output=$(cat << EOF
+<http-only>true</http-only>
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259123 ------------"
 
@@ -2193,7 +3249,20 @@ echo "------------ V-259126 ------------"
 
 echo " "
 echo "------------ V-259127 ------------"
-
+check=$(xmllint --xpath "//Host/@deployXML" /usr/lib/vmware-vsphere-ui/server/conf/server.xml 2>/dev/null)
+check_output=$(cat << EOF
+deployXML="false"
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259128 ------------"
 
@@ -2202,13 +3271,37 @@ echo "------------ V-259129 ------------"
 
 echo " "
 echo "------------ V-259130 ------------"
-
+check=$(ls -l /usr/lib/vmware-vsphere-ui/server/webapps/examples 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259131 ------------"
-
+check=$(ls -l /usr/lib/vmware-vsphere-ui/server/webapps/ROOT 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259132 ------------"
-
+check=$(ls -l /usr/lib/vmware-vsphere-ui/server/webapps/docs 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259133 ------------"
 
@@ -2217,10 +3310,26 @@ echo "------------ V-259134 ------------"
 
 echo " "
 echo "------------ V-259135 ------------"
-
+check=$(ls -l /usr/lib/vmware-vsphere-ui/server/webapps/manager 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259136 ------------"
-
+check=$(ls -l /usr/lib/vmware-vsphere-ui/server/webapps/host-manager 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo ----------------------------------------------------------------
 echo ----------VMware vSphere 8.0 VAMI Technical Implementation Guide
@@ -2236,10 +3345,28 @@ echo "------------ V-259139 ------------"
 
 echo " "
 echo "------------ V-259140 ------------"
-
+check=$(/opt/vmware/cap_lighttpd/sbin/lighttpd -p -f /var/lib/vmware/cap-lighttpd/lighttpd.conf 2>/dev/null|grep "accesslog.format" 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259141 ------------"
-
+check=$(find /var/log/vmware/applmgmt/ /var/log/vmware/applmgmt-audit/ -xdev -type f -a '(' -perm -o+w -o -not -user root -o -not -group root ')' -exec ls -ld {} \; 2>/dev/null)
+check2=$(find /opt/vmware/var/log/lighttpd/ -xdev -type f -a '(' -perm -o+w -o -not -user lighttpd -o -not -group lighttpd ')' -exec ls -ld {} \; 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check2=$( echo "$check2" | awk '{$1=$1};1' )
+if [ -z "$check" ] && [ -z "$check2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259142 ------------"
 
@@ -2251,7 +3378,15 @@ echo "------------ V-259144 ------------"
 
 echo " "
 echo "------------ V-259145 ------------"
-
+check=$(/opt/vmware/cap_lighttpd/sbin/lighttpd -p -f /var/lib/vmware/cap-lighttpd/lighttpd.conf 2>/dev/null|awk '/server\.modules/,/\)/'|grep mod_webdav 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259146 ------------"
 
@@ -2263,13 +3398,29 @@ echo "------------ V-259149 ------------"
 
 echo " "
 echo "------------ V-259150 ------------"
-
+check=$(/opt/vmware/cap_lighttpd/sbin/lighttpd -p -f /var/lib/vmware/cap-lighttpd/lighttpd.conf 2>/dev/null|awk '/mimetype\.assign/,/\)/'|grep "text/"|grep -v "charset=utf-8" 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259151 ------------"
 
 echo " "
 echo "------------ V-259152 ------------"
-
+check=$(/opt/vmware/cap_lighttpd/sbin/lighttpd -p -f /var/lib/vmware/cap-lighttpd/lighttpd.conf 2>/dev/null|awk '/server\.modules/,/\)/'|grep mod_status 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-259153 ------------"
 

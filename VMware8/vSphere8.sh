@@ -2196,7 +2196,49 @@ else
 fi
 echo " "
 echo "------------ V-258812 ------------"
+audit_dir="/etc/audit"
+open_files=()
+check_file_status() {
+    local file="$1"
+    local owner="$2"
+    local group="$3"
+    local perms="$4"
+    local has_issues=false
+    if [[ "$owner" != "root" ]] || [[ "$group" != "root" ]]; then
+        echo "  - $file: Incorrect ownership ($owner:$group)"
+        has_issues=true
+    fi
+    if (( 10#$perms > 640 )); then
+        echo "  - $file: Permissions are too permissive ($perms)"
+        has_issues=true
+    fi
+    if $has_issues; then
+        open_files+=("$file")
+    fi
+}
 
+find "$audit_dir" -type f -print0 | while IFS= read -r -d $'\0' file; do
+    stat_output=$(stat -c "%U:%G %a" "$file" 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        echo "Error getting status for $file"
+        continue 
+    fi
+    owner=$(echo "$stat_output" | cut -d ":" -f 1)
+    group=$(echo "$stat_output" | cut -d ":" -f 2 | cut -d " " -f 1)
+    perms=$(echo "$stat_output" | cut -d " " -f 2)
+    check_file_status "$file" "$owner" "$group" "$perms"
+done
+
+if [ ${#open_files[@]} -gt 0 ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo "The following files have security issues:"
+    for file in "${open_files[@]}"; do
+        stat -c "%n %U:%G %a" "$file"
+    done
+    count=$((count + 1))
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
 echo " "
 echo "------------ V-258813 ------------"
 check=$(auditctl -l | grep chmod 2>/dev/null)
@@ -2507,10 +2549,38 @@ else
 fi
 echo " "
 echo "------------ V-258833 ------------"
-
+check=$(auditctl -l | grep -E "(usermod|groupmod)" 2>/dev/null)
+check_output=$(cat << EOF
+-w /usr/sbin/usermod -p x -k usermod
+-w /usr/sbin/groupmod -p x -k groupmod
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258834 ------------"
-
+check=$(auditctl -l | grep -E "(userdel|groupdel)" 2>/dev/null)
+check_output=$(cat << EOF
+-w /usr/sbin/userdel -p x -k userdel
+-w /usr/sbin/groupdel -p x -k groupdel
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258835 ------------"
 
@@ -2522,175 +2592,891 @@ echo "------------ V-258837 ------------"
 
 echo " "
 echo "------------ V-258838 ------------"
-
+check=$(grep '^password.*pam_pwquality.so' /etc/pam.d/system-password 2>/dev/null)
+ocredit=$(echo "$check" | awk '{for (i=1; i<=NF; i++) if ($i ~ /^ocredit=/) {split($i, a, "="); print a[2]}}')
+ocredit=$( echo "$ocredit" | awk '{$1=$1};1' )
+if [[ "$ocredit" =~ ^-?[0-9]+$ ]] && [[ "$ocredit" -lt 0 ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258839 ------------"
 
 echo " "
 echo "------------ V-258840 ------------"
-
+check=$(grep -E "TMOUT=900" /etc/bash.bashrc /etc/profile.d/* 2>/dev/null)
+check_output=$(cat << EOF
+/etc/profile.d/tmout.sh:TMOUT=900
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258841 ------------"
-
+check=$(/sbin/sysctl fs.protected_symlinks 2>/dev/null)
+check_output=$(cat << EOF
+fs.protected_symlinks = 1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258842 ------------"
 
 echo " "
 echo "------------ V-258843 ------------"
-
+check=$(grep '^unlock_time =' /etc/security/faillock.conf 2>/dev/null)
+check_output=$(cat << EOF
+unlock_time = 0
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258844 ------------"
 
 echo " "
 echo "------------ V-258845 ------------"
-
+check=$(grep '^space_left' /etc/audit/auditd.conf 2>/dev/null)
+check_output=$(cat << EOF
+space_left = 25%
+space_left_action = SYSLOG
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258846 ------------"
-
+check=$(grep '^gpgcheck' /etc/tdnf/tdnf.conf 2>/dev/null)
+check_output=$(cat << EOF
+gpgcheck=1
+EOF
+)
+check_output2=$(cat << EOF
+gpgcheck=true
+EOF
+)
+check_output3=$(cat << EOF
+gpgcheck=yes
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+check_output3=$( echo "$check_output3" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ] || [ "$check" = "$check_output2" ] || [ "$check" = "$check_output3" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258847 ------------"
 
 echo " "
 echo "------------ V-258848 ------------"
-
+check=$(cat /proc/sys/kernel/randomize_va_space 2>/dev/null)
+check_output=$(cat << EOF
+2
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258849 ------------"
-
+check=$(grep -i '^clean_requirements_on_remove' /etc/tdnf/tdnf.conf 2>/dev/null)
+check_output=$(cat << EOF
+clean_requirements_on_remove=1
+EOF
+)
+check_output2=$(cat << EOF
+clean_requirements_on_remove=true
+EOF
+)
+check_output3=$(cat << EOF
+clean_requirements_on_remove=yes
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+check_output3=$( echo "$check_output3" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ] || [ "$check" = "$check_output2" ] || [ "$check" = "$check_output3" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258850 ------------"
-
+check=$(auditctl -l | grep -E "faillog|lastlog|tallylog" 2>/dev/null)
+check_output=$(cat << EOF
+-w /var/log/faillog -p wa -k logons
+-w /var/log/lastlog -p wa -k logons
+-w /var/log/tallylog -p wa -k logons
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258851 ------------"
-
+check=$(auditctl -l | grep init_module 2>/dev/null)
+check_output=$(cat << EOF
+-a always,exit -F arch=b32 -S init_module -F key=modules
+-a always,exit -F arch=b64 -S init_module -F key=modules
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258852 ------------"
-
+check=$(cat /proc/sys/crypto/fips_enabled 2>/dev/null)
+check_output=$(cat << EOF
+1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258853 ------------"
-
+check=$(grep '^password.*pam_pwquality.so' /etc/pam.d/system-password 2>/dev/null)
+dictcheck=$(echo "$check" | awk '{for (i=1; i<=NF; i++) if ($i ~ /^dictcheck=/) {split($i, a, "="); print a[2]}}')
+dictcheck=$( echo "$dictcheck" | awk '{$1=$1};1' )
+if [[ "$dictcheck" =~ ^-?[0-9]+$ ]] && [[ "$dictcheck" == 1 ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258854 ------------"
-
+check=$(grep '^FAIL_DELAY' /etc/login.defs 2>/dev/null)
+check_output=$(cat << EOF
+FAIL_DELAY 4
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258855 ------------"
 
 echo " "
 echo "------------ V-258856 ------------"
-
+check=$(grep '^UMASK' /etc/login.defs 2>/dev/null)
+check_output=$(cat << EOF
+UMASK 077
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258857 ------------"
-
+check=$(sshd -T|&grep -i HostbasedAuthentication 2>/dev/null)
+check_output=$(cat << EOF
+hostbasedauthentication no
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258858 ------------"
-
+check=$(grep '^auth' /etc/pam.d/system-auth 2>/dev/null)
+check_output=$(cat << EOF
+auth required pam_faillock.so preauth
+auth required pam_unix.so
+auth required pam_faillock.so authfail
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check2=$(grep '^account' /etc/pam.d/system-account 2>/dev/null)
+check_output2=$(cat << EOF
+account required pam_faillock.so
+account required pam_unix.so
+EOF
+)
+check2=$( echo "$check2" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ] && [ "$check2" = "$check_output2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258859 ------------"
-
+check=$(grep '^silent' /etc/security/faillock.conf 2>/dev/null)
+check_output=$(cat << EOF
+silent
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258860 ------------"
-
+check=$(grep '^audit' /etc/security/faillock.conf 2>/dev/null)
+check_output=$(cat << EOF
+audit
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258861 ------------"
-
+check=$(grep '^even_deny_root' /etc/security/faillock.conf 2>/dev/null)
+check_output=$(cat << EOF
+even_deny_root
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258862 ------------"
-
+check=$(grep '^dir' /etc/security/faillock.conf 2>/dev/null)
+check_output=$(cat << EOF
+dir = /var/log/faillock
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258863 ------------"
-
+check=$(grep '^password' /etc/pam.d/system-password 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [[ "$check" == *"pam_pwquality.so"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258864 ------------"
 
 echo " "
 echo "------------ V-258865 ------------"
-
+check=$(sshd -T|&grep -i SyslogFacility 2>/dev/null)
+check_output=$(cat << EOF
+syslogfacility AUTHPRIV
+EOF
+)
+check_output2=$(cat << EOF
+syslogfacility AUTH
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ] || [ "$check" = "$check_output2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258866 ------------"
-
+check=$(sshd -T|&grep -i LogLevel 2>/dev/null)
+check_output=$(cat << EOF
+loglevel INFO
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258867 ------------"
-
+check=$(sshd -T|&grep -i ClientAliveCountMax 2>/dev/null)
+check_output=$(cat << EOF
+clientalivecountmax 0
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258868 ------------"
-
+check=$(auditctl -l | grep -E "(/etc/passwd|/etc/shadow|/etc/group|/etc/gshadow)" 2>/dev/null)
+check_output=$(cat << EOF
+-w /etc/passwd -p wa -k passwd
+-w /etc/shadow -p wa -k shadow
+-w /etc/group -p wa -k group
+-w /etc/gshadow -p wa -k gshadow
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258869 ------------"
-
+check=$(grep '^auth' /etc/pam.d/system-auth 2>/dev/null)
+check_output=$(cat << EOF
+auth required pam_faillock.so preauth
+auth required pam_unix.so
+auth required pam_faillock.so authfail
+auth optional pam_faildelay.so delay=4000000
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258870 ------------"
-
+check=$(sshd -T|&grep -i PermitEmptyPasswords 2>/dev/null)
+check_output=$(cat << EOF
+permitemptypasswords no
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258871 ------------"
-
+check=$(sshd -T|&grep -i PermitUserEnvironment 2>/dev/null)
+check_output=$(cat << EOF
+permituserenvironment no
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258872 ------------"
-
+check=$(grep '^CREATE_HOME' /etc/login.defs 2>/dev/null)
+check_output=$(cat << EOF
+CREATE_HOME yes
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258873 ------------"
-
+check=$(systemctl is-enabled debug-shell.service 2>/dev/null)
+check2=$(systemctl is-active debug-shell.service 2>/dev/null)
+check_output=$(cat << EOF
+disabled
+EOF
+)
+check_output2=$(cat << EOF
+inactive
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check2=$( echo "$check2" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ] && [ "$check2" = "$check_output2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    echo $check2
+    ((count++))
+fi
 echo " "
 echo "------------ V-258874 ------------"
-
+check=$(sshd -T|&grep -i GSSAPIAuthentication 2>/dev/null)
+check_output=$(cat << EOF
+gssapiauthentication no
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258875 ------------"
-
+check=$(sshd -T|&grep -i X11Forwarding 2>/dev/null)
+check_output=$(cat << EOF
+x11forwarding no
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258876 ------------"
-
+check=$(sshd -T|&grep -i StrictModes 2>/dev/null)
+check_output=$(cat << EOF
+strictmodes yes
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258877 ------------"
-
+check=$(sshd -T|&grep -i KerberosAuthentication 2>/dev/null)
+check_output=$(cat << EOF
+kerberosauthentication no
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258878 ------------"
-
+check=$(sshd -T|&grep -i Compression 2>/dev/null)
+check_output=$(cat << EOF
+compression no
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258879 ------------"
-
+check=$(sshd -T|&grep -i PrintLastLog 2>/dev/null)
+check_output=$(cat << EOF
+printlastlog yes
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258880 ------------"
-
+check=$(sshd -T|&grep -i IgnoreRhosts 2>/dev/null)
+check_output=$(cat << EOF
+ignorerhosts yes
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258881 ------------"
-
+check=$(sshd -T|&grep -i IgnoreUserKnownHosts 2>/dev/null)
+check_output=$(cat << EOF
+ignoreuserknownhosts yes
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258882 ------------"
-
+check=$(sshd -T|&grep -i MaxAuthTries 2>/dev/null)
+check_output=$(cat << EOF
+maxauthtries 6
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258883 ------------"
-
+check=$(sshd -T|&grep -i AllowTcpForwarding 2>/dev/null)
+check_output=$(cat << EOF
+allowtcpforwarding no
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258884 ------------"
-
+check=$(sshd -T|&grep -i LoginGraceTime 2>/dev/null)
+check_output=$(cat << EOF
+logingracetime 30
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258885 ------------"
-
+check=$(systemctl status ctrl-alt-del.target --no-pager 2>/dev/null)
+check2=$(systemctl is-active ctrl-alt-del.target 2>/dev/null)
+check_output2=$(cat << EOF
+inactive
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check2=$( echo "$check2" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+if [[ "$check" == *"masked"* ]] && [ "$check2" = "$check_output2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    echo $check2
+    ((count++))
+fi
 echo " "
 echo "------------ V-258886 ------------"
-
+check=$(/sbin/sysctl -a --pattern "net.ipv[4|6].conf.(all|default).accept_source_route" 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv6.conf.all.accept_source_route = 0
+net.ipv6.conf.default.accept_source_route = 0
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258887 ------------"
-
+check=$(/sbin/sysctl net.ipv4.icmp_echo_ignore_broadcasts 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258888 ------------"
-
+check=$(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default).accept_redirects" 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258889 ------------"
-
+check=$(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default).secure_redirects" 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.conf.all.secure_redirects = 0
+net.ipv4.conf.default.secure_redirects = 0
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258890 ------------"
-
+check=$(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default).send_redirects" 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258891 ------------"
-
+check=$(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default).log_martians" 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.default.log_martians = 1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258892 ------------"
-
+check=$(/sbin/sysctl -a --pattern "net.ipv4.conf.(all|default).rp_filter" 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258893 ------------"
-
+echo "If IP forwarding is required, for example if Kubernetes is installed, this is Not Applicable, otherwise:"
+check=$(/sbin/sysctl net.ipv4.ip_forward 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.ip_forward = 0
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258894 ------------"
-
+check=$(/sbin/sysctl net.ipv4.tcp_timestamps 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.tcp_timestamps = 1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258895 ------------"
 
@@ -2699,34 +3485,146 @@ echo "------------ V-258896 ------------"
 
 echo " "
 echo "------------ V-258897 ------------"
-
+check=$(grep '^password.*pam_pwquality.so' /etc/pam.d/system-password 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [[ "$check" == *"enforce_for_root"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258898 ------------"
-
+check=$(resolvectl status | grep '^Fallback DNS' 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258899 ------------"
-
+check=$(auditctl -l | grep -E /etc/security/opasswd 2>/dev/null)
+check_output=$(cat << EOF
+-w /etc/security/opasswd -p wa -k opasswd
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258900 ------------"
-
+check=$(sshd -T|&grep -i MACs 2>/dev/null)
+check_output=$(cat << EOF
+macs hmac-sha2-512,hmac-sha2-256
+EOF
+)
+check_output2=$(cat << EOF
+hmac-sha2-256,macs hmac-sha2-512
+EOF
+)
+check_output3=$(cat << EOF
+hmac-sha2-256
+EOF
+)
+check_output4=$(cat << EOF
+macs hmac-sha2-512
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+check_output3=$( echo "$check_output3" | awk '{$1=$1};1' )
+check_output4=$( echo "$check_output4" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ] || [ "$check" = "$check_output2" ] || [ "$check" = "$check_output3" ] || [ "$check" = "$check_output4" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258901 ------------"
-
+check=$(systemctl is-enabled rsyslog 2>/dev/null)
+check2=$(systemctl is-active rsyslog 2>/dev/null)
+check_output=$(cat << EOF
+enabled
+EOF
+)
+check_output2=$(cat << EOF
+active
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check2=$( echo "$check2" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ] && [ "$check2" = "$check_output2" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    echo $check2
+    ((count++))
+fi
 echo " "
 echo "------------ V-258902 ------------"
 
 echo " "
 echo "------------ V-258903 ------------"
-
+check=$(/sbin/sysctl fs.protected_hardlinks 2>/dev/null)
+check_output=$(cat << EOF
+fs.protected_hardlinks = 1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258904 ------------"
-
+check=$(/sbin/sysctl fs.suid_dumpable 2>/dev/null)
+check_output=$(cat << EOF
+fs.suid_dumpable = 0
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-266062 ------------"
 
 echo " "
 echo "------------ V-266063 ------------"
-
+check=$(grep nullok /etc/pam.d/system-password /etc/pam.d/system-auth 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo ----------------------------------------------------------------------
 echo ----------VMware vSphere 8.0 PostgreSQL Technical Implementation Guide

@@ -2098,6 +2098,24 @@ else
 fi
 echo " "
 echo "------------ V-258807 ------------"
+check=$(grep '^write_logs' /etc/audit/auditd.conf 2>/dev/null)
+check_output=$(cat << EOF
+write_logs = yes
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
+echo " "
+echo "------------ V-258808 ------------"
 check=$(systemctl is-enabled auditd 2>/dev/null)
 check2=$(systemctl is-active auditd 2>/dev/null)
 check_output=$(cat << EOF
@@ -2121,80 +2139,372 @@ else
     ((count++))
 fi
 echo " "
-echo "------------ V-258808 ------------"
-
-echo " "
 echo "------------ V-258809 ------------"
-
+check=$(auditctl -l | grep execve 2>/dev/null)
+check_output=$(cat << EOF
+-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -F key=execpriv
+-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -F key=execpriv
+-a always,exit -F arch=b32 -S execve -C gid!=egid -F egid=0 -F key=execpriv
+-a always,exit -F arch=b64 -S execve -C gid!=egid -F egid=0 -F key=execpriv
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258810 ------------"
-
+check=$(grep -E "^disk_full_action|^disk_error_action|^admin_space_left_action" /etc/audit/auditd.conf 2>/dev/null)
+check_output=$(cat << EOF
+admin_space_left_action = SYSLOG
+disk_full_action = SYSLOG
+disk_error_action = SYSLOG
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258811 ------------"
-
+check=$(grep -iw log_file /etc/audit/auditd.conf 2>/dev/null)
+check2=$(stat -c "%n %U:%G %a" $check)
+owner=$(echo "$check2" | awk '{split($2,a,":"); print a[1]}')
+group=$(echo "$check2" | awk '{split($2,a,":"); print a[2]}')
+permissions=$(echo "$check2" | awk '{print $3}')
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [[ "$owner" == "root" ]] && [[ "$group" == "root" ]] && [[ "$permissions" == 600 ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+elif [ -z "$check" ]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258812 ------------"
 
 echo " "
 echo "------------ V-258813 ------------"
-
+check=$(auditctl -l | grep chmod 2>/dev/null)
+check_output=$(cat << EOF
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,lchown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid>=1000 -F auid!=-1 -F key=perm_mod
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,lchown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid=0 -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,lchown,fchmod,fchown,chown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid>=1000 -F auid!=-1 -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,lchown,fchmod,fchown,chown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid=0 -F key=perm_mod
+EOF
+)
+check_output2=$(cat << EOF
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,lchown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,lchown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid=0 -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,lchown,fchmod,fchown,chown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid>=1000 -F auid!=4294967295 -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,lchown,fchmod,fchown,chown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid=0 -F key=perm_mod
+EOF
+)
+check_output3=$(cat << EOF
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,lchown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid>=1000 -F auid!=unset -F key=perm_mod
+-a always,exit -F arch=b64 -S chmod,fchmod,chown,fchown,lchown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid=0 -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,lchown,fchmod,fchown,chown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid>=1000 -F auid!=unset -F key=perm_mod
+-a always,exit -F arch=b32 -S chmod,lchown,fchmod,fchown,chown,setxattr,lsetxattr,fsetxattr,removexattr,lremovexattr,fremovexattr,fchownat,fchmodat -F auid=0 -F key=perm_mod
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+check_output2=$( echo "$check_output2" | awk '{$1=$1};1' )
+check_output3=$( echo "$check_output3" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ] || [ "$check" = "$check_output2" ] || [ "$check" = "$check_output3" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258814 ------------"
-
+check=$(grep '^password.*pam_pwquality.so' /etc/pam.d/system-password 2>/dev/null)
+ucredit=$(echo "$check" | awk '{for (i=1; i<=NF; i++) if ($i ~ /^ucredit=/) {split($i, a, "="); print a[2]}}')
+ucredit=$( echo "$ucredit" | awk '{$1=$1};1' )
+if [[ "$ucredit" =~ ^-?[0-9]+$ ]] && [[ "$ucredit" -lt 0 ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258815 ------------"
-
+check=$(grep '^password.*pam_pwquality.so' /etc/pam.d/system-password 2>/dev/null)
+lcredit=$(echo "$check" | awk '{for (i=1; i<=NF; i++) if ($i ~ /^lcredit=/) {split($i, a, "="); print a[2]}}')
+lcredit=$( echo "$lcredit" | awk '{$1=$1};1' )
+if [[ "$lcredit" =~ ^-?[0-9]+$ ]] && [[ "$lcredit" -lt 0 ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258816 ------------"
-
+check=$(grep '^password.*pam_pwquality.so' /etc/pam.d/system-password 2>/dev/null)
+dcredit=$(echo "$check" | awk '{for (i=1; i<=NF; i++) if ($i ~ /^dcredit=/) {split($i, a, "="); print a[2]}}')
+dcredit=$( echo "$dcredit" | awk '{$1=$1};1' )
+if [[ "$dcredit" =~ ^-?[0-9]+$ ]] && [[ "$dcredit" -lt 0 ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258817 ------------"
-
+check=$(grep '^password.*pam_pwquality.so' /etc/pam.d/system-password 2>/dev/null)
+difok=$(echo "$check" | awk '{for (i=1; i<=NF; i++) if ($i ~ /^difok=/) {split($i, a, "="); print a[2]}}')
+difok=$( echo "$difok" | awk '{$1=$1};1' )
+if [[ "$difok" =~ ^-?[0-9]+$ ]] && [[ "$difok" -ge 8 ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258818 ------------"
-
+check=$(grep ^ENCRYPT_METHOD /etc/login.defs 2>/dev/null)
+check_output=$(cat << EOF
+ENCRYPT_METHOD SHA512
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258819 ------------"
-
+check=$(rpm -qa | grep telnet 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258820 ------------"
-
+check=$(grep '^PASS_MIN_DAYS' /etc/login.defs 2>/dev/null)
+check_output=$(cat << EOF
+PASS_MIN_DAYS   1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258821 ------------"
-
+check=$(grep '^PASS_MAX_DAYS' /etc/login.defs 2>/dev/null)
+check_output=$(cat << EOF
+PASS_MAX_DAYS   90
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258822 ------------"
-
+check=$(grep '^password.*pam_pwhistory.so' /etc/pam.d/system-password 2>/dev/null)
+remember=$(echo "$check" | awk '{for (i=1; i<=NF; i++) if ($i ~ /^remember=/) {split($i, a, "="); print a[2]}}')
+remember=$( echo "$remember" | awk '{$1=$1};1' )
+if [[ "$remember" =~ ^-?[0-9]+$ ]] && [[ "$remember" -ge 5 ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258823 ------------"
-
+check=$(grep '^password.*pam_pwquality.so' /etc/pam.d/system-password 2>/dev/null)
+minlen=$(echo "$check" | awk '{for (i=1; i<=NF; i++) if ($i ~ /^minlen=/) {split($i, a, "="); print a[2]}}')
+minlen=$( echo "$minlen" | awk '{$1=$1};1' )
+if [[ "$minlen" =~ ^-?[0-9]+$ ]] && [[ "$minlen" -ge 15 ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258824 ------------"
-
+check=$(grep -E "^set\s+superusers|^password_pbkdf2" /boot/grub2/grub.cfg 2>/dev/null)
+check=$(echo "$check" | awk '{$1=$1};1')
+superuser=$(echo "$check" | grep '^set\s\+superusers' | awk -F'"' '{print $2}')
+password_line=$(echo "$check" | grep '^password_pbkdf2')
+if [[ -z "$superuser" ]]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+elif [[ -z "$password_line" ]] || ! echo "$password_line" | grep -q "$superuser"; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+else
+    echo -e "\e[32mNot a Finding\e[0m"
+fi
 echo " "
 echo "------------ V-258825 ------------"
-
+check=$(modprobe --showconfig | grep "^install" | grep "/bin" 2>/dev/null)
+check_output=$(cat << EOF
+install sctp /bin/false
+install dccp /bin/false
+install dccp_ipv4 /bin/false
+install dccp_ipv6 /bin/false
+install ipx /bin/false
+install appletalk /bin/false
+install decnet /bin/false
+install rds /bin/false
+install tipc /bin/false
+install bluetooth /bin/false
+install usb_storage /bin/false
+install ieee1394 /bin/false
+install cramfs /bin/false
+install freevxfs /bin/false
+install jffs2 /bin/false
+install hfs /bin/false
+install hfsplus /bin/false
+install squashfs /bin/false
+install udf /bin/false
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [[ "$check" == *"$check_output"* ]]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258826 ------------"
-
+check=$(awk -F ":" 'list[$3]++{print $1, $3}' /etc/passwd 2>/dev/null)
+check=$( echo "$check" | awk '{$1=$1};1' )
+if [ -z "$check" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258827 ------------"
-
+check=$(grep 'pam_unix.so' /etc/pam.d/system-password 2>/dev/null)
+check=$(echo "$check" | awk '{$1=$1};1')
+if echo "$check" | grep -q 'sha512'; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258828 ------------"
-
+check=$(/sbin/sysctl kernel.dmesg_restrict 2>/dev/null)
+check_output=$(cat << EOF
+kernel.dmesg_restrict = 1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258829 ------------"
-
+check=$(/sbin/sysctl net.ipv4.tcp_syncookies 2>/dev/null)
+check_output=$(cat << EOF
+net.ipv4.tcp_syncookies = 1
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258830 ------------"
-
+check=$(sshd -T|&grep -i ClientAliveInterval 2>/dev/null)
+check_output=$(cat << EOF
+ClientAliveInterval 900
+EOF
+)
+check=$( echo "$check" | awk '{$1=$1};1' )
+check_output=$( echo "$check_output" | awk '{$1=$1};1' )
+if [ "$check" = "$check_output" ]; then
+    echo -e "\e[32mNot a Finding\e[0m"
+else
+    echo -e "\e[31mOpen\e[0m"
+    echo $check
+    ((count++))
+fi
 echo " "
 echo "------------ V-258831 ------------"
 
 echo " "
 echo "------------ V-258832 ------------"
-
+umask_value=$(grep '^\$umask' /etc/rsyslog.conf | awk '{print $2}')
+if [[ -z "$umask_value" ]]; then
+    echo -e "\e[31mOpen\e[0m"
+    echo $umask_value
+    ((count++))
+else
+    umask_value=$((8#$umask_value))
+    min_restrictive=$((8#0037))
+    if [[ $umask_value -ge $min_restrictive ]]; then
+        echo -e "\e[32mNot a Finding\e[0m"
+    else
+        echo -e "\e[31mOpen\e[0m"
+        echo $umask_value
+        ((count++))
+    fi
+fi
 echo " "
 echo "------------ V-258833 ------------"
 

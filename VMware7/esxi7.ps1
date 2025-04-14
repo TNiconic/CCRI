@@ -1,6 +1,6 @@
 #****************************************************************
 #*************Written By Mitchell Gibson USACPB CRIA*************
-#*************Last Updated Aug 21, 2023 v1.1*********************
+#*************Last Updated Apr 14, 2025 v1.0*********************
 #****************************************************************
 
 #20230821
@@ -1006,7 +1006,7 @@ write-host ""
 write-host "------------ V-256445 ------------"
 foreach ($VMHosts in (Get-VMHost)) {
     $ovveride_vm_logger = (plink "$VMHosts" -l root -pw "$result" -batch "grep "^vmx\.log" /etc/vmware/config")
-    if ($ovveride_vm_logger -eq $null) {
+    if ($null -eq $ovveride_vm_logger) {
         Write-Host "Not a Finding" -ForegroundColor Green
     }   
     else {

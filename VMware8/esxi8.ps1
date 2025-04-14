@@ -38,16 +38,48 @@ $result = [System.Runtime.InteropServices.Marshal]::PtrToStringUni($Ptr)
 #Start of the Checks
 
 write-host "------------ V-258728 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $three_invalid = (Get-VMHost | sort-object name | Get-AdvancedSetting -Name Security.AccountLockFailures).value
+    if ($three_invalid -eq 3) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $three_invalid
+    }
+}
 write-host ""
 write-host "------------ V-258729 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $banner = (Get-VMHost | sort-object name| Get-AdvancedSetting -Name Annotations.WelcomeMessage).value
+    if ($banner -like "* You are accessing a U.S. Government*") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $banner
+    }
+}
 write-host ""
 write-host "------------ V-258730 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $lockdown = (Get-VMHost | Select-Object Name,@{N="Lockdown";E={$_.Extensiondata.Config.LockdownMode}}).Lockdown
+    if ($lockdown -eq ("lockdownNormal" -or "lockdownStrict")) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $lockdown
+    }
+}
 write-host ""
 write-host "------------ V-258731 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $fifteen_min = (Get-VMHost | sort-object name| Get-AdvancedSetting -Name Security.AccountUnlockTime).value
+    if ($fifteen_min -eq 900) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $fifteen_min
+    }
+}
 write-host ""
 write-host "----------- V-258732 -------------"
 foreach ($VMHosts in (Get-VMHost)) {
@@ -61,19 +93,67 @@ foreach ($VMHosts in (Get-VMHost)) {
 }
 write-host ""
 write-host "------------ V-258733 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $info = (Get-VMHost | sort-object name | Get-AdvancedSetting -Name Config.HostAgent.log.level).value
+    if ($info -eq "info") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $info
+    }
+}
 write-host ""
 write-host "------------ V-258734 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $complex_p = (Get-VMHost | Get-AdvancedSetting -Name Security.PasswordQualityControl).value
+    if ($complex_p -eq "similar=deny retry=3 min=disabled,disabled,disabled,disabled,15") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $complex_p
+    }
+}
 write-host ""
 write-host "------------ V-258735 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $password_h = (Get-VMHost | Get-AdvancedSetting -Name Security.PasswordHistory).value
+    if ($password_h -eq 5) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $password_h
+    }
+ }
 write-host ""
 write-host "------------ V-258736 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $mob_disable = (Get-VMHost | Get-AdvancedSetting -Name Config.HostAgent.plugins.solo.enableMob).value
+    if ($mob_disable -eq "True") {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $mob_disable
+    } else {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }
+ }
 write-host ""
 write-host "------------ V-258737 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $AD_authentication = (Get-VMHost | Get-VMHostAuthentication).Domain;
+    if ($null -eq $AD_authentication) {
+        Write-Host "AD Authentication is not set"
+        Write-Host "Only Root and service accounts should be listed"
+        Write-Host "If any account listed isn't a local service or root account this will be open; otherwise this will be Not Applicable"
+        $esxcli_other = Get-EsxCli -VMHost $VMhost -V2
+        $user_output = ($esxcli_other.system.account.list.Invoke())
+        Write-Host ""
+        Write-Output $user_output | Format-Table -AutoSize
+    }
+    if ($AD_authentication -eq "Active Directory") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } if ($AD_authentication -like ".*") {
+        Write-Host "Open" -ForegroundColor Red
+    }
+}
 write-host ""
 write-host "------------ V-258738 ------------"
 foreach ($VMHosts in (Get-VMHost)) {
@@ -87,7 +167,15 @@ foreach ($VMHosts in (Get-VMHost)) {
 }
 write-host ""
 write-host "------------ V-258739 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $shell_time = (Get-VMHost | Get-AdvancedSetting -Name UserVars.ESXiShellInteractiveTimeOut).Value
+    if ($shell_time -le 900 -and $shell_time -ne 0) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $shell_time
+    }
+}
 write-host ""
 write-host "------------ V-258740 ------------"
 foreach ($VMHosts in (Get-VMHost)) {
@@ -113,10 +201,26 @@ foreach ($VMHosts in (Get-VMHost)) {
 }
 write-host ""
 write-host "------------ V-258742 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $shell_time = (Get-VMHost | Get-AdvancedSetting -Name Security.AccountUnlockTime).Value
+    if ($shell_time -le 900 -and $shell_time -ne 0) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $shell_time
+    }
+}
 write-host ""
 write-host "------------ V-258743 ------------"
-
+foreach ($VMhost in (Get-VMHost)) {
+    $shell_time = (Get-VMHost | Get-AdvancedSetting -Name Syslog.global.auditRecord.storageCapacity).Value
+    if ($shell_time -eq 100) {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    } else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $shell_time
+    }
+}
 write-host ""
 write-host "------------ V-258744 ------------"
 

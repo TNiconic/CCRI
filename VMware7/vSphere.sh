@@ -342,10 +342,10 @@ vami_cipher=$(/opt/vmware/sbin/vami-lighttpd -p -f /opt/vmware/etc/lighttpd/ligh
 if [ "$vami_cipher" = "" ]; then
     echo -e "\e[32mNot a Finding\e[0m"
 elif [ "$vami_cipher" = "disabled" ]; then
-    echo -e "\e[32mNot a Finding\e[0m"
-else
     echo -e "\e[31mOpen\e[0m"
     echo $vami_cipher
+else
+    echo -e "\e[32mNot a Finding\e[0m"
 fi
 echo " "
 echo "------------ V-256671 ------------"
@@ -2682,7 +2682,7 @@ fi
 echo " "
 echo "------------ V-256534 ------------"
 photon_crypto_ciphers=$(sshd -T|&grep -i Ciphers)
-photon_crypto_ciphers_output_1=$(cat << EOF
+photon_crypto_ciphers_output=$(cat << EOF
 ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
 EOF
 )

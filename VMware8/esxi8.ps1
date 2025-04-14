@@ -465,10 +465,29 @@ write-host "------------ V-258798 ------------"
 
 write-host ""
 write-host "------------ V-258799 ------------"
-
+foreach ($VMHosts in (Get-VMHost)) {
+    $ovveride_vm_logger = (plink "$VMHosts" -l root -pw "$result" -batch "esxcli system settings kernel list -o disableHwrng")
+    $ovveride_vm_logger2 = (plink "$VMHosts" -l root -pw "$result" -batch "esxcli system settings kernel list -o disableHwrng")
+    if ($ovveride_vm_logger -eq "false" -and $ovveride_vm_logger2 -eq "0") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }   
+    else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $ovveride_vm_logger
+    }
+}
 write-host ""
 write-host "------------ V-258800 ------------"
-
+foreach ($VMHosts in (Get-VMHost)) {
+    $ovveride_vm_logger = (plink "$VMHosts" -l root -pw "$result" -batch "esxcli system syslog config logfilter get")
+    if ($ovveride_vm_logger -eq "false") {
+        Write-Host "Not a Finding" -ForegroundColor Green
+    }   
+    else {
+        Write-Host "Open" -ForegroundColor Red
+        Write-Output $ovveride_vm_logger
+    }
+}
 write-host ""
 write-host "------------ V-265974 ------------"
 

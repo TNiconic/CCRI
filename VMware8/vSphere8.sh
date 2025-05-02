@@ -2880,18 +2880,20 @@ else
 fi
 echo " "
 echo "------------ V-258847 ------------"
-=$(grep -ihs nopasswd /etc/sudoers /etc/sudoers.d/* | grep -v "^#" | grep -v "^%" | awk '{print $1}')
+_1=$(grep -ihs nopasswd /etc/sudoers /etc/sudoers.d/* | grep -v "^#" | grep -v "^%" | awk '{print $1}')
 _2=$(awk -F: '($2 != "x" && $2 != "!") {print $1}' /etc/shadow)
 _check=false
-for user in $; do
+
+for user in $_1; do
     if [[ " $_2 " == *" $user "* ]]; then
         _check=true
     fi
 done
-if $_check; then
+
+if [ "$_check" = true ]; then
     echo -e "\e[31mOpen\e[0m"
-    echo $(grep -ihs nopasswd /etc/sudoers /etc/sudoers.d/* | grep -v "^#" | grep -v "^%" | awk '{print $1}')
-    echo $(awk -F: '($2 != "x" && $2 != "!") {print $1}' /etc/shadow)
+    echo "$_1"
+    echo "$_2"
 else
     echo -e "\e[32mNot a Finding\e[0m"
 fi

@@ -2896,7 +2896,6 @@ else
     echo -e "\e[32mNot a Finding\e[0m"
 fi
 echo " "
-echo " "
 echo "------------ V-258848 ------------"
 check=$(cat /proc/sys/kernel/randomize_va_space 2>/dev/null)
 check_output=$(cat << EOF

@@ -42,14 +42,18 @@ if ($ssh_cabability -eq $true) {
 $VMhosts = Get-VMHost
 
 $ssh_reachable = $false
-foreach ($VMhost in $VMhosts) {
-    $output = & plink.exe $VMhost -batch exit 2>&1
-    if ($output -match "Connection refused") {
-        Write-Host "SSH Connection seems unreachable, check if the service is enabled or username/password" -ForegroundColor Yellow
-        $ssh_reachable = $false
-    } else {
-        $ssh_reachable = $true
+if ($ssh_cabability -eq $true) {
+    foreach ($VMhost in $VMhosts) {
+        $output = & plink.exe $VMhost -batch exit 2>&1
+        if ($output -match "Connection refused") {
+            Write-Host "SSH Connection seems unreachable, check if the service is enabled or username/password" -ForegroundColor Yellow
+            $ssh_reachable = $false
+        } else {
+            $ssh_reachable = $true
+        }
     }
+} else {
+    $ssh_reachable = $false
 }
 
 write-host "------------ V-258728 ------------"

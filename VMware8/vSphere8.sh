@@ -13,7 +13,6 @@ ip_address=$(ip -o -4 addr show dev eth0 | awk '{print $4}' | cut -d '/' -f 1)
 mac_address=$(ip -o link show dev eth0 | awk '{print $17}')
 domain=$(dnsdomainname)
 
-=0
 echo "Hostname:"$hostname_var 
 echo "IP Address:"$ip_address
 echo "MAC Address:"$mac_address
